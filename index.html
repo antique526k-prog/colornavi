@@ -2890,7 +2890,25 @@ function renderResults(){
 
   // Build the "current -> counter-tone -> goal" visual swatch strip
   const paletteRow = document.getElementById('paletteRow');
-  const needsCounter = needsLiftUp && !counter.noCounterNeeded;
+  // When the goal hue and the underlying lifted pigment's own hue point the SAME direction (both
+  // warm, roughly aligned) AND the goal is vividly saturated, no corrective pigment is needed at
+  // all — per direct salon feedback, a vivid warm goal is already what the lifted underlying
+  // pigment naturally reads as, so mixing in a corrective shade only pulls the result AWAY from
+  // the goal rather than toward it (this only showed up as a problem once the goal's own
+  // saturation was high enough that the underlying warmth alone was already close to target;
+  // muted/low-saturation warm goals still benefit from a small corrective dose to clean up
+  // residual muddiness, so this skip is intentionally scoped to the high-saturation case only).
+  const liftedUnderlyingHex = naturalLevelSwatch[Math.max(1, Math.min(20, Math.round(estimatedLift)))];
+  const [lur, lug, lub] = hexToRgbArr(liftedUnderlyingHex);
+  const liftedUnderlyingHue = rgbToHsl(lur, lug, lub).h;
+  let goalUnderlyingHueGap = Math.abs(goalHueRaw - liftedUnderlyingHue);
+  if(goalUnderlyingHueGap > 180) goalUnderlyingHueGap = 360 - goalUnderlyingHueGap;
+  const GOAL_HIGH_SAT_THRESHOLD = 0.45; // vivid enough that the goal IS the warm pigment, not a muted version of it
+  const GOAL_UNDERLYING_HUE_ALIGNMENT = 35; // same warm "family" as the lifted underlying pigment
+  const goalAlignedWithUnderlying = hueFromDegreesToToneKey(goalHueRaw, goalSatRaw) !== 'neutral'
+    && goalSatRaw >= GOAL_HIGH_SAT_THRESHOLD
+    && goalUnderlyingHueGap <= GOAL_UNDERLYING_HUE_ALIGNMENT;
+  const needsCounter = needsLiftUp && !counter.noCounterNeeded && !goalAlignedWithUnderlying;
   let paletteHtml = `
     <div class="palette-item">
       <div class="palette-swatch" style="background:${currentData.hex}"></div>
