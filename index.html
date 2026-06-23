@@ -1,0 +1,3123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>カラーナビ | Hair Pocket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1A1410;
+    --paper:#F5EFE6;
+    --paper-dim:#EAE2D3;
+    --amber:#C97B4A;
+    --amber-deep:#A85F33;
+    --ash:#7C8B7A;
+    --alert:#E8483C;
+    --line: rgba(26,20,16,0.14);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans JP', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .scale-watermark{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    opacity:0.05;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:40px 0;
+  }
+  .scale-watermark div{
+    height:1px;
+    background:var(--ink);
+    width:100%;
+  }
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width:1000px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:6px;
+  }
+  .brand{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:0.04em;
+  }
+  .brand small{
+    display:block;
+    font-family:'Noto Sans JP',sans-serif;
+    font-weight:500;
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--amber-deep);
+    margin-top:2px;
+  }
+  .tagline{
+    font-size:11px;
+    color:rgba(26,20,16,0.55);
+    text-align:right;
+    line-height:1.6;
+  }
+  h1.page-title{
+    font-family:'Shippori Mincho', serif;
+    font-size:30px;
+    font-weight:700;
+    margin:22px 0 6px;
+    letter-spacing:0.02em;
+  }
+  .lede{
+    font-size:13.5px;
+    color:rgba(26,20,16,0.68);
+    margin:0 0 30px;
+    line-height:1.8;
+    max-width:560px;
+  }
+
+  .section-divider{
+    border-top:2px solid var(--ink);
+    margin:56px 0 28px;
+  }
+  .section-title{
+    font-family:'Shippori Mincho', serif;
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 6px;
+    letter-spacing:0.02em;
+  }
+  .under-finder-slot{
+    max-width:340px;
+    margin-bottom:24px;
+  }
+  .under-finder-result{
+    margin-top:8px;
+  }
+
+  .uploaders{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:28px;
+  }
+  @media (max-width:620px){
+    .uploaders{grid-template-columns:1fr;}
+  }
+  .slot{
+    background:var(--paper-dim);
+    border:1.5px solid var(--line);
+    border-radius:2px;
+    padding:18px;
+    position:relative;
+  }
+  .slot-label{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .slot-num{
+    font-family:'Shippori Mincho', serif;
+    font-size:13px;
+    color:var(--amber-deep);
+    font-weight:700;
+  }
+  .slot-title{
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:0.02em;
+  }
+  .slot-sub{
+    font-size:10.5px;
+    color:rgba(26,20,16,0.5);
+    margin-left:auto;
+  }
+  .drop-zone{
+    aspect-ratio:4/3;
+    border:1.5px dashed var(--line);
+    border-radius:2px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    cursor:pointer;
+    background:rgba(255,255,255,0.4);
+    overflow:hidden;
+    transition:border-color 0.2s, background 0.2s;
+    position:relative;
+  }
+  .drop-zone:hover{
+    border-color:var(--amber);
+    background:rgba(201,123,74,0.06);
+  }
+  .drop-zone.has-image{
+    border-style:solid;
+    cursor:crosshair;
+  }
+  .drop-zone img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    pointer-events:none;
+    user-select:none;
+  }
+  .select-overlay{
+    position:absolute;
+    inset:0;
+    touch-action:none;
+  }
+  .select-box{
+    position:absolute;
+    border:2px solid var(--alert);
+    background:rgba(232,72,60,0.18);
+    pointer-events:none;
+    display:none;
+  }
+  .select-box.confirmed{
+    background:transparent;
+    border-style:dashed;
+    border-width:1.5px;
+  }
+  .select-hint-badge{
+    position:absolute;
+    top:8px;
+    left:8px;
+    background:rgba(26,20,16,0.78);
+    color:var(--paper);
+    font-size:10.5px;
+    padding:5px 10px;
+    border-radius:12px;
+    letter-spacing:0.02em;
+    pointer-events:none;
+    z-index:3;
+  }
+  .select-hint-badge.confirmed{
+    background:var(--alert);
+  }
+  .reselect-btn{
+    position:absolute;
+    bottom:8px;
+    right:8px;
+    background:rgba(245,239,230,0.92);
+    color:var(--ink);
+    border:1px solid var(--line);
+    font-size:10.5px;
+    padding:5px 10px;
+    border-radius:12px;
+    cursor:pointer;
+    z-index:3;
+    display:none;
+  }
+  .drop-hint{
+    font-size:11.5px;
+    color:rgba(26,20,16,0.45);
+    text-align:center;
+    padding:0 12px;
+    line-height:1.7;
+  }
+  .drop-hint .icon{
+    font-size:22px;
+    display:block;
+    margin-bottom:6px;
+    opacity:0.5;
+  }
+  input[type="file"]{display:none;}
+
+  .swatch-readout{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:12px;
+    min-height:34px;
+    flex-wrap:wrap;
+  }
+  .swatch-chip{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,0.8);
+    box-shadow:0 0 0 1px var(--line);
+    flex-shrink:0;
+  }
+  .swatch-text{
+    font-size:11.5px;
+    color:rgba(26,20,16,0.6);
+    line-height:1.5;
+  }
+  .swatch-text strong{
+    color:var(--ink);
+    font-weight:700;
+  }
+  .sample-warning{
+    width:100%;
+    margin-top:6px;
+    padding:8px 10px;
+    background:rgba(232,72,60,0.08);
+    border:1px solid rgba(232,72,60,0.3);
+    border-radius:2px;
+    font-size:11px;
+    line-height:1.6;
+    color:#a8392f;
+  }
+  .crop-preview-block{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    margin-top:4px;
+  }
+  .crop-preview-label{
+    font-size:10px;
+    color:rgba(26,20,16,0.45);
+    white-space:nowrap;
+  }
+  .crop-preview-img{
+    width:40px;
+    height:40px;
+    object-fit:cover;
+    border-radius:4px;
+    border:1px solid var(--line);
+  }
+
+  .analyze-btn{
+    display:block;
+    width:100%;
+    margin:8px 0 36px;
+    padding:16px;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    border-radius:2px;
+    font-family:'Noto Sans JP', sans-serif;
+    font-size:14.5px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    cursor:pointer;
+    transition:background 0.2s;
+  }
+  .analyze-btn:hover:not(:disabled){background:var(--amber-deep);}
+  .analyze-btn:disabled{
+    background:rgba(26,20,16,0.2);
+    cursor:not-allowed;
+  }
+
+  .results{display:none;}
+  .results.show{display:block;}
+
+  .scale-panel{
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:2px;
+    padding:26px 22px 30px;
+    margin-bottom:22px;
+  }
+  .scale-panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:18px;
+  }
+  .scale-panel-head h2{
+    font-family:'Shippori Mincho', serif;
+    font-size:16px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:0.03em;
+  }
+  .scale-panel-head span{
+    font-size:10.5px;
+    color:rgba(245,239,230,0.5);
+    letter-spacing:0.05em;
+  }
+  .level-track{
+    position:relative;
+    height:54px;
+    margin:0 4px 8px;
+  }
+  .level-bar{
+    position:absolute;
+    top:22px;
+    left:0;
+    right:0;
+    height:8px;
+    border-radius:4px;
+    background:linear-gradient(to right,
+      #2a1c12 0%, #3d2817 11%, #54341d 22%, #6e4322 33%,
+      #8a5829 44%, #a86f34 55%, #c68a47 66%, #dba868 77%,
+      #ecc890 88%, #f6e3c4 100%);
+  }
+  .level-tick{
+    position:absolute;
+    top:0;
+    width:2px;
+    height:54px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    transform:translateX(-50%);
+  }
+  .level-pin{
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    border:2.5px solid var(--paper);
+    margin-top:14px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.4);
+  }
+  .level-pin.now{background:var(--ash);}
+  .level-pin.goal{background:var(--alert);}
+  .level-tag{
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    margin-bottom:2px;
+    white-space:nowrap;
+  }
+  .level-scale-nums{
+    display:flex;
+    justify-content:space-between;
+    font-size:9px;
+    color:rgba(245,239,230,0.35);
+    margin:6px 4px 0;
+  }
+  .level-gap-line{
+    text-align:center;
+    font-size:12px;
+    margin-top:16px;
+    color:rgba(245,239,230,0.85);
+    letter-spacing:0.02em;
+  }
+  .level-gap-line b{color:var(--paper);font-size:13.5px;}
+
+  .compare-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-bottom:18px;
+  }
+  @media (max-width:620px){
+    .compare-grid{grid-template-columns:1fr;}
+  }
+  .compare-card{
+    background:var(--paper-dim);
+    border:1.5px solid var(--line);
+    padding:16px 18px;
+  }
+  .compare-card h3{
+    font-size:11px;
+    letter-spacing:0.08em;
+    color:rgba(26,20,16,0.5);
+    margin:0 0 10px;
+    font-weight:700;
+  }
+  .compare-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:6px 0;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  .compare-row:last-child{border-bottom:none;}
+  .compare-row .v{font-weight:700;}
+
+  .verdict{
+    background:var(--paper-dim);
+    border-left:4px solid var(--alert);
+    padding:20px 22px;
+    margin-bottom:14px;
+  }
+  .verdict-label{
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    color:var(--alert);
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .verdict-title{
+    font-family:'Shippori Mincho', serif;
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:10px;
+    line-height:1.5;
+  }
+  .verdict-body{
+    font-size:13px;
+    line-height:1.85;
+    color:rgba(26,20,16,0.78);
+  }
+  .verdict-body .tone-tag{
+    display:inline-block;
+    padding:2px 9px;
+    border-radius:10px;
+    font-size:11.5px;
+    font-weight:700;
+    color:#fff;
+    margin:0 2px;
+  }
+
+  .step-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  .step-list li{
+    display:flex;
+    gap:14px;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+    line-height:1.75;
+  }
+  .step-list li:last-child{border-bottom:none;}
+  .step-num{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--amber-deep);
+    flex-shrink:0;
+    width:20px;
+  }
+  .step-content{flex:1;}
+  .step-swatches{
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+  .swatch-block{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+  }
+  .swatch-circle{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,0.85);
+    box-shadow:0 0 0 1px var(--line), 0 2px 5px rgba(0,0,0,0.12);
+  }
+  .swatch-name{
+    font-size:9.5px;
+    color:rgba(26,20,16,0.55);
+    text-align:center;
+    line-height:1.4;
+    max-width:64px;
+  }
+  .swatch-name b{
+    display:block;
+    color:var(--ink);
+    font-size:10px;
+  }
+
+  .palette-strip{
+    margin-top:20px;
+    padding-top:16px;
+    border-top:1px dashed var(--line);
+  }
+  .palette-strip-label{
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    color:rgba(26,20,16,0.5);
+    font-weight:700;
+    margin-bottom:12px;
+  }
+  .palette-row{
+    display:flex;
+    gap:16px;
+    align-items:flex-end;
+  }
+  .palette-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+  }
+  .palette-swatch{
+    width:54px;
+    height:54px;
+    border-radius:50%;
+    border:2.5px solid #fff;
+    box-shadow:0 0 0 1px var(--line), 0 3px 8px rgba(0,0,0,0.14);
+  }
+  .palette-swatch.target{
+    width:64px;
+    height:64px;
+    border-color:var(--alert);
+    border-width:3px;
+  }
+  .palette-arrow{
+    font-size:16px;
+    color:rgba(26,20,16,0.3);
+    margin-bottom:18px;
+  }
+  .palette-item-label{
+    font-size:10px;
+    text-align:center;
+    color:rgba(26,20,16,0.6);
+    line-height:1.4;
+  }
+  .palette-item-label b{
+    display:block;
+    font-size:10.5px;
+    color:var(--ink);
+  }
+
+  .gradient-row{
+    display:flex;
+    gap:0;
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 0 0 1px var(--line), 0 3px 8px rgba(0,0,0,0.1);
+  }
+  .gradient-step{
+    flex:1;
+    height:46px;
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    min-width:0;
+  }
+  .gradient-step span{
+    font-size:9.5px;
+    font-weight:700;
+    padding-bottom:4px;
+    color:rgba(0,0,0,0.55);
+    text-shadow:0 1px 2px rgba(255,255,255,0.5);
+  }
+  .gradient-step.endpoint{
+    box-shadow:inset 0 0 0 2px var(--alert);
+  }
+  .gradient-step.bleach-zone{
+    position:relative;
+  }
+  .gradient-step.bleach-zone::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.35) 0, rgba(255,255,255,0.35) 2px, transparent 2px, transparent 6px);
+  }
+  .gradient-labels{
+    display:flex;
+    justify-content:space-between;
+    margin-top:6px;
+    font-size:10px;
+    color:rgba(26,20,16,0.5);
+  }
+
+  .subtractive-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .subtractive-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    min-width:74px;
+  }
+  .subtractive-swatch{
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    border:2.5px solid #fff;
+    box-shadow:0 0 0 1px var(--line), 0 3px 8px rgba(0,0,0,0.12);
+  }
+  .subtractive-swatch.result{
+    border-color:var(--amber-deep);
+    border-width:3px;
+  }
+  .subtractive-item-label{
+    font-size:9.5px;
+    text-align:center;
+    color:rgba(26,20,16,0.6);
+    line-height:1.4;
+  }
+  .subtractive-item-label b{
+    display:block;
+    font-size:10px;
+    color:var(--ink);
+  }
+  .subtractive-plus, .subtractive-arrow{
+    font-size:15px;
+    color:rgba(26,20,16,0.3);
+  }
+
+  .product-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .product-card{
+    flex:1;
+    min-width:150px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:rgba(255,255,255,0.55);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px 12px;
+  }
+  .product-card:first-child{
+    border-color:var(--amber-deep);
+    box-shadow:0 0 0 1px var(--amber-deep);
+  }
+  .product-swatch{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--line);
+    flex-shrink:0;
+  }
+  .swatch-pair{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    flex-shrink:0;
+  }
+  .swatch-pair-row{
+    display:flex;
+    gap:4px;
+  }
+  .swatch-pair-row .product-swatch{
+    width:32px;
+    height:32px;
+    border-radius:5px;
+  }
+  .swatch-pair-row .product-swatch.result{
+    border-color:var(--amber-deep);
+    box-shadow:0 0 0 1px rgba(168,95,51,0.3);
+  }
+  .swatch-pair-labels{
+    display:flex;
+    gap:4px;
+  }
+  .swatch-pair-labels span{
+    font-size:8px;
+    color:rgba(26,20,16,0.4);
+    width:32px;
+    text-align:center;
+  }
+  .product-info{
+    font-size:11px;
+    line-height:1.5;
+    color:rgba(26,20,16,0.7);
+  }
+  .product-info b{
+    display:block;
+    font-size:12px;
+    color:var(--ink);
+  }
+  .product-info .product-best-tag{
+    display:inline-block;
+    font-size:9px;
+    color:var(--amber-deep);
+    font-weight:700;
+    letter-spacing:0.04em;
+    margin-bottom:2px;
+  }
+  .brand-tag{
+    display:inline-block;
+    font-size:9px;
+    color:rgba(26,20,16,0.5);
+    background:rgba(26,20,16,0.06);
+    border-radius:8px;
+    padding:1px 7px;
+    margin-left:5px;
+    font-weight:500;
+  }
+  .brand-tag.cross{
+    color:var(--alert);
+    background:rgba(232,72,60,0.08);
+  }
+  .product-note{
+    font-size:10px;
+    color:rgba(26,20,16,0.45);
+    margin-top:10px;
+    line-height:1.6;
+  }
+
+  .disclaimer{
+    margin-top:30px;
+    padding:14px 16px;
+    background:rgba(232,72,60,0.06);
+    border:1px solid rgba(232,72,60,0.25);
+    font-size:11.5px;
+    line-height:1.8;
+    color:rgba(26,20,16,0.65);
+  }
+  .disclaimer b{color:var(--alert);}
+
+  footer{
+    text-align:center;
+    font-size:10.5px;
+    color:rgba(26,20,16,0.35);
+    margin-top:50px;
+    letter-spacing:0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="scale-watermark" id="watermark"></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">カラーナビ<small>HAIR POCKET COLOR DIAGNOSIS</small></div>
+    <div class="tagline">誰にでもできることを<br>どこよりも素晴らしく</div>
+  </header>
+
+  <h1 class="page-title">現状と希望、色のギャップを見る</h1>
+  <p class="lede">現在の髪色と、お客様の希望色の写真を2枚アップロードし、それぞれ写真の上で<strong>髪の部分だけを指でなぞって囲んで</strong>ください。囲んだ範囲の色からレベル(明度)と色味の差を診断し、必要な処方の方向性を表示します。最終判断は必ず実物の毛束とカウンセリングで確認してください。</p>
+
+  <div class="uploaders">
+    <div class="slot">
+      <div class="slot-label">
+        <span class="slot-num">01</span>
+        <span class="slot-title">現状の髪色</span>
+        <span class="slot-sub">CURRENT</span>
+      </div>
+      <div class="drop-zone" id="zoneCurrent" onclick="if(!hasImage('current')) document.getElementById('fileCurrent').click()">
+        <div class="drop-hint"><span class="icon">📷</span>自然光で撮った写真を<br>タップして選択</div>
+      </div>
+      <input type="file" id="fileCurrent" accept="image/*">
+      <div class="swatch-readout" id="readoutCurrent"></div>
+    </div>
+
+    <div class="slot">
+      <div class="slot-label">
+        <span class="slot-num">02</span>
+        <span class="slot-title">希望の髪色</span>
+        <span class="slot-sub">GOAL</span>
+      </div>
+      <div class="drop-zone" id="zoneGoal" onclick="if(!hasImage('goal')) document.getElementById('fileGoal').click()">
+        <div class="drop-hint"><span class="icon">✂️</span>カラーチャートや<br>イメージ写真を選択</div>
+      </div>
+      <input type="file" id="fileGoal" accept="image/*">
+      <div class="swatch-readout" id="readoutGoal"></div>
+    </div>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" disabled>2枚アップロードすると診断できます</button>
+
+  <div class="results" id="results">
+
+    <div class="scale-panel">
+      <div class="scale-panel-head">
+        <h2>レベルスケール診断</h2>
+        <span>明度 LEVEL 1–18</span>
+      </div>
+      <div class="level-track">
+        <div class="level-bar"></div>
+        <div class="level-tick" id="tickCurrent">
+          <span class="level-tag" style="color:var(--ash)">現状</span>
+          <div class="level-pin now"></div>
+        </div>
+        <div class="level-tick" id="tickGoal">
+          <span class="level-tag" style="color:var(--alert)">希望</span>
+          <div class="level-pin goal"></div>
+        </div>
+      </div>
+      <div class="level-scale-nums">
+        <span>1 黒</span><span>5</span><span>9</span><span>13</span><span>18 最高明度</span>
+      </div>
+      <div class="level-gap-line" id="gapLine"></div>
+    </div>
+
+    <div class="compare-grid">
+      <div class="compare-card">
+        <h3>現状の髪色 — 推定値</h3>
+        <div class="compare-row"><span>レベル(明度)</span><span class="v" id="curLevel">–</span></div>
+        <div class="compare-row"><span>アンダートーン</span><span class="v" id="curTone">–</span></div>
+        <div class="compare-row"><span>HEX</span><span class="v" id="curHex">–</span></div>
+      </div>
+      <div class="compare-card">
+        <h3>希望の髪色 — 推定値</h3>
+        <div class="compare-row"><span>レベル(明度)</span><span class="v" id="goalLevel">–</span></div>
+        <div class="compare-row"><span>アンダートーン</span><span class="v" id="goalTone">–</span></div>
+        <div class="compare-row"><span>HEX</span><span class="v" id="goalHex">–</span></div>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <div class="verdict-label">処方の方向性</div>
+      <div class="verdict-title" id="verdictTitle">–</div>
+      <div class="verdict-body" id="verdictBody"></div>
+
+      <div class="palette-strip">
+        <div class="palette-strip-label">必要な色見本(イメージ)</div>
+        <div class="palette-row" id="paletteRow"></div>
+      </div>
+
+      <div class="palette-strip" id="gradientStrip" style="display:none;">
+        <div class="palette-strip-label">明度の段階(現状 → 希望レベル)</div>
+        <div class="gradient-row" id="gradientRow"></div>
+      </div>
+
+      <div class="palette-strip" id="subtractiveStrip" style="display:none;">
+        <div class="palette-strip-label">現実的な仕上がり予測(減法混色)</div>
+        <div class="subtractive-row" id="subtractiveRow"></div>
+        <div class="product-note">※ 地毛のアンダーと補色を顔料の重なりとして計算した見立てです。完全な中和には至らず、補色を強めるほど明度も下がる傾向を反映しています。</div>
+      </div>
+
+      <div class="palette-strip" id="dyeCorrectionStrip" style="display:none;">
+        <div class="palette-strip-label">配合案 — <span id="productLineLabel">クオルシア + フィヨーレ BLカラー</span></div>
+        <div class="product-row" id="dyeCorrectionRow"></div>
+        <div class="product-note">※ 希望色(2色配合でレベルを正確に合わせます)に、必要な場合のみ補色を少量加えた配合案です。カードの左がカラー剤そのものの色、右がその地肌に乗せた仕上がり予測です。配合はHEX値からの色合わせ推定であり、薬剤の化学的な相性や安全性を保証するものではありません。メーカーをまたぐ配合候補は色味の見立てのみです。</div>
+      </div>
+    </div>
+
+    <ol class="step-list" id="stepList"></ol>
+
+    <div class="disclaimer">
+      <b>注意:</b> これは写真の画素から色を推定する簡易診断です。光の当たり方・画面の色再現・既存毛のダメージ状態によって誤差が出ます。実際の処方は必ず毛束テストとお客様の頭皮状態の確認を行ってください。カラー剤でのリフト限度(目安レベル14)は使用する薬剤や髪質によって変わるため、現場の判断を優先してください。
+    </div>
+  </div>
+
+  <div class="section-divider"></div>
+
+  <h2 class="section-title">目的色のアンダーを探る</h2>
+  <p class="lede">仕上がりの目的色の写真を1枚アップロードすると、その色を実現するために地毛のアンダーがどこまで削れている必要があるか(推定リフトレベルと、そのレベルで出てくるアンダーの色)を単独で診断します。</p>
+
+  <div class="slot under-finder-slot">
+    <div class="slot-label">
+      <span class="slot-num">—</span>
+      <span class="slot-title">目的色の写真</span>
+      <span class="slot-sub">TARGET</span>
+    </div>
+    <div class="drop-zone" id="zoneUnderTarget" onclick="if(!hasImage('underTarget')) document.getElementById('fileUnderTarget').click()">
+      <div class="drop-hint"><span class="icon">🎯</span>作りたい仕上がりの写真を<br>タップして選択</div>
+    </div>
+    <input type="file" id="fileUnderTarget" accept="image/*">
+    <div class="swatch-readout" id="readoutUnderTarget"></div>
+  </div>
+
+  <div class="under-finder-result" id="underFinderResult" style="display:none;">
+    <div class="verdict">
+      <div class="verdict-label">必要なアンダーの目安</div>
+      <div class="verdict-title" id="underVerdictTitle">–</div>
+      <div class="verdict-body" id="underVerdictBody"></div>
+
+      <div class="palette-strip">
+        <div class="palette-strip-label">目的色 → 必要なアンダー(イメージ)</div>
+        <div class="palette-row" id="underPaletteRow"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>HAIR POCKET / カラーナビ — 社内検証用プロトタイプ</footer>
+</div>
+
+<canvas id="hiddenCanvas" style="display:none;"></canvas>
+
+<script>
+const watermark = document.getElementById('watermark');
+for(let i=0;i<9;i++){
+  const d = document.createElement('div');
+  watermark.appendChild(d);
+}
+
+let currentData = null;
+let goalData = null;
+let hasImageMap = { current: false, goal: false, underTarget: false };
+let imageElMap = {};       // store: img element
+let selectionMap = {};     // store: {x,y,w,h} in displayed-image pixel coords (relative to natural size)
+let analysisDataMap = {};  // store: analysis result, for stores beyond the main current/goal pair
+let selectionCompleteCallbacks = {}; // store: function(analysis) to run right after that store's selection is confirmed
+
+function hasImage(store){
+  return hasImageMap[store];
+}
+
+function setupSlot(zoneId, fileId, readoutId, store){
+  const zone = document.getElementById(zoneId);
+  const file = document.getElementById(fileId);
+  const readout = document.getElementById(readoutId);
+
+  file.addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        zone.innerHTML = '';
+        zone.classList.add('has-image');
+
+        const displayImg = document.createElement('img');
+        displayImg.src = ev.target.result;
+        zone.appendChild(displayImg);
+
+        const badge = document.createElement('div');
+        badge.className = 'select-hint-badge';
+        badge.textContent = '指でなぞって髪の部分を囲んでください';
+        zone.appendChild(badge);
+
+        const overlay = document.createElement('div');
+        overlay.className = 'select-overlay';
+        zone.appendChild(overlay);
+
+        const box = document.createElement('div');
+        box.className = 'select-box';
+        zone.appendChild(box);
+
+        const reselectBtn = document.createElement('button');
+        reselectBtn.className = 'reselect-btn';
+        reselectBtn.textContent = '選び直す';
+        reselectBtn.onclick = (evt) => {
+          evt.stopPropagation();
+          selectionMap[store] = null;
+          box.style.display = 'none';
+          box.classList.remove('confirmed');
+          badge.textContent = '指でなぞって髪の部分を囲んでください';
+          badge.classList.remove('confirmed');
+          reselectBtn.style.display = 'none';
+        };
+        zone.appendChild(reselectBtn);
+
+        imageElMap[store] = img;
+        hasImageMap[store] = true;
+        selectionMap[store] = null;
+
+        attachSelectionHandlers(overlay, box, badge, reselectBtn, zone, img, store, readout);
+        updateButton();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(f);
+  });
+}
+
+function attachSelectionHandlers(overlay, box, badge, reselectBtn, zone, img, store, readout){
+  let dragging = false;
+  let startX = 0, startY = 0;
+
+  const getPoint = (e) => {
+    const rect = overlay.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top, rect };
+  };
+
+  const onDown = (e) => {
+    e.preventDefault();
+    const p = getPoint(e);
+    dragging = true;
+    startX = Math.max(0, Math.min(p.x, p.rect.width));
+    startY = Math.max(0, Math.min(p.y, p.rect.height));
+    box.style.display = 'block';
+    box.style.left = startX + 'px';
+    box.style.top = startY + 'px';
+    box.style.width = '0px';
+    box.style.height = '0px';
+  };
+
+  const onMove = (e) => {
+    if(!dragging) return;
+    e.preventDefault();
+    const p = getPoint(e);
+    const curX = Math.max(0, Math.min(p.x, p.rect.width));
+    const curY = Math.max(0, Math.min(p.y, p.rect.height));
+    const left = Math.min(startX, curX);
+    const top = Math.min(startY, curY);
+    const w = Math.abs(curX - startX);
+    const h = Math.abs(curY - startY);
+    box.style.left = left + 'px';
+    box.style.top = top + 'px';
+    box.style.width = w + 'px';
+    box.style.height = h + 'px';
+  };
+
+  const onUp = (e) => {
+    if(!dragging) return;
+    dragging = false;
+    const rect = overlay.getBoundingClientRect();
+    const boxLeft = parseFloat(box.style.left);
+    const boxTop = parseFloat(box.style.top);
+    const boxW = parseFloat(box.style.width);
+    const boxH = parseFloat(box.style.height);
+
+    if(boxW < 12 || boxH < 12){
+      // too small, treat as accidental tap — ignore
+      box.style.display = 'none';
+      return;
+    }
+
+    // Convert overlay (displayed, object-fit:cover) coords to natural image pixel coords
+    const sel = displayRectToNaturalRect(boxLeft, boxTop, boxW, boxH, rect.width, rect.height, img.naturalWidth, img.naturalHeight);
+    selectionMap[store] = sel;
+
+    // Switch the box from a solid red fill (mid-drag) to a thin dashed outline (confirmed),
+    // so the swatch readout below isn't visually muddled by a red overlay sitting on the photo.
+    box.classList.add('confirmed');
+
+    badge.textContent = '範囲を選択しました';
+    badge.classList.add('confirmed');
+    reselectBtn.style.display = 'block';
+
+    const analysis = analyzeImage(img, sel);
+    // currentData/goalData stay as dedicated variables since the main flow's render functions
+    // already reference them directly; any other store (like the standalone underTarget finder)
+    // goes into analysisDataMap instead, keyed by store name, so this stays general-purpose
+    // without having to touch every existing renderX(currentData, goalData) call site.
+    if(store === 'current'){ currentData = analysis; }
+    else if(store === 'goal'){ goalData = analysis; }
+    analysisDataMap[store] = analysis;
+    if(selectionCompleteCallbacks[store]){
+      selectionCompleteCallbacks[store](analysis);
+    }
+
+    // If the dominant color cluster covers less than ~35% of the sampled pixels, the selection
+    // likely contains a mix of hair plus something else (background, skin, packaging text) —
+    // warn so the person can redraw a tighter box rather than trusting a muddled reading.
+    const lowConfidence = analysis.dominantShare < 0.35;
+    const warningHtml = lowConfidence
+      ? `<div class="sample-warning">⚠ 範囲に背景や他の色が混ざっている可能性があります。髪だけの部分をもう少し狭く囲み直すと精度が上がります。</div>`
+      : '';
+
+    readout.innerHTML = `
+      <div class="swatch-chip" style="background:${analysis.hex}"></div>
+      <div class="swatch-text">推定 <strong>${analysis.hex}</strong><br>レベル ${analysis.level} / ${analysis.toneLabel}</div>
+      <div class="crop-preview-block">
+        <span class="crop-preview-label">切り出した範囲:</span>
+        <img class="crop-preview-img" src="${analysis.cropDataUrl}">
+      </div>
+      ${warningHtml}
+    `;
+    updateButton();
+  };
+
+  overlay.addEventListener('mousedown', onDown);
+  overlay.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  overlay.addEventListener('touchstart', onDown, {passive:false});
+  overlay.addEventListener('touchmove', onMove, {passive:false});
+  overlay.addEventListener('touchend', onUp);
+}
+
+// object-fit:cover means the image is scaled to fill the box and cropped on one axis.
+// This maps a rectangle drawn in displayed-box coordinates back to the original image's pixel coordinates.
+function displayRectToNaturalRect(boxLeft, boxTop, boxW, boxH, displayW, displayH, naturalW, naturalH){
+  const displayRatio = displayW / displayH;
+  const naturalRatio = naturalW / naturalH;
+  let scale, offsetX = 0, offsetY = 0;
+  if(naturalRatio > displayRatio){
+    // natural image is wider relative to box -> cropped on left/right
+    scale = displayH / naturalH;
+    offsetX = (naturalW * scale - displayW) / 2;
+  } else {
+    // natural image is taller relative to box -> cropped on top/bottom
+    scale = displayW / naturalW;
+    offsetY = (naturalH * scale - displayH) / 2;
+  }
+  const nx = (boxLeft + offsetX) / scale;
+  const ny = (boxTop + offsetY) / scale;
+  const nw = boxW / scale;
+  const nh = boxH / scale;
+  return {
+    x: Math.max(0, Math.round(nx)),
+    y: Math.max(0, Math.round(ny)),
+    w: Math.round(Math.min(nw, naturalW - nx)),
+    h: Math.round(Math.min(nh, naturalH - ny))
+  };
+}
+
+function updateButton(){
+  const btn = document.getElementById('analyzeBtn');
+  const ready = selectionMap['current'] && selectionMap['goal'];
+  if(ready){
+    btn.disabled = false;
+    btn.textContent = '診断する';
+  } else if(hasImageMap['current'] && hasImageMap['goal']){
+    btn.disabled = true;
+    btn.textContent = '両方の写真で髪の部分を囲んでください';
+  } else {
+    btn.disabled = true;
+    btn.textContent = '2枚アップロードすると診断できます';
+  }
+}
+
+function analyzeImage(img, region){
+  const canvas = document.getElementById('hiddenCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // region is in natural-image pixel coordinates (the user-selected hair area)
+  const sx = region.x, sy = region.y, sw = Math.max(1, region.w), sh = Math.max(1, region.h);
+  const outW = 80, outH = 80;
+  canvas.width = outW;
+  canvas.height = outH;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
+  const data = ctx.getImageData(0, 0, outW, outH).data;
+  const cropDataUrl = canvas.toDataURL('image/png');
+
+  // Inset the sampling area away from the selection edges: when a person draws a box around hair,
+  // the box border often clips a sliver of background, skin, or clothing. Trimming ~15% off each
+  // edge keeps the analysis to the interior of the selection, away from those edge pixels.
+  const insetX = Math.round(outW * 0.15);
+  const insetY = Math.round(outH * 0.15);
+
+  // Collect pixel samples from the inset region, excluding near-black shadows and near-white
+  // blown highlights (these are lighting artifacts, not the hair's actual color).
+  let pixels = [];
+  for(let y = insetY; y < outH - insetY; y++){
+    for(let x = insetX; x < outW - insetX; x++){
+      const i = (y * outW + x) * 4;
+      const r=data[i], g=data[i+1], b=data[i+2];
+      const lum = (r+g+b)/3;
+      if(lum > 12 && lum < 248){
+        pixels.push([r,g,b]);
+      }
+    }
+  }
+  if(pixels.length === 0){
+    for(let i=0; i<data.length; i+=4){ pixels.push([data[i], data[i+1], data[i+2]]); }
+  }
+
+  // Cluster pixels into coarse color buckets and take the most common bucket's average.
+  // This matters because a selection box often clips a sliver of something else entirely
+  // (a red chart label, a bit of skin, a strand of background) — averaging R/G/B independently
+  // across all pixels can blend those outliers into a color that doesn't actually exist in the
+  // photo. Picking the dominant cluster instead keeps the result anchored to a real hair color.
+  const bucketSize = 24;
+  const buckets = {};
+  for(const [r,g,b] of pixels){
+    const key = [Math.floor(r/bucketSize), Math.floor(g/bucketSize), Math.floor(b/bucketSize)].join(',');
+    if(!buckets[key]){ buckets[key] = { count: 0, rSum: 0, gSum: 0, bSum: 0 }; }
+    buckets[key].count++;
+    buckets[key].rSum += r;
+    buckets[key].gSum += g;
+    buckets[key].bSum += b;
+  }
+  let bestBucket = null;
+  for(const key in buckets){
+    if(!bestBucket || buckets[key].count > bestBucket.count){
+      bestBucket = buckets[key];
+    }
+  }
+  const r = bestBucket.rSum / bestBucket.count;
+  const g = bestBucket.gSum / bestBucket.count;
+  const b = bestBucket.bSum / bestBucket.count;
+  const dominantShare = bestBucket.count / pixels.length;
+
+  const hex = '#' + [r,g,b].map(v => Math.round(v).toString(16).padStart(2,'0')).join('');
+
+  // Level: map luminance to a 1-18 hairdressing level scale (Japanese salon convention).
+  // A plain linear mapping of luminance reads several levels darker than how colorists actually
+  // grade hair. This piecewise gamma curve keeps very dark hair near level 1-2, and brings
+  // mid/light tones in line with the 18-level industry scale.
+  const luminance = 0.299*r + 0.587*g + 0.114*b;
+  const norm = luminance / 255;
+  let level;
+  if(norm < 0.10){ level = 1; }
+  else if(norm < 0.14){ level = 2; }
+  else if(norm < 0.18){ level = 4; }
+  else {
+    const adjusted = Math.pow(norm, 0.9);
+    level = Math.max(1, Math.min(18, Math.round(adjusted * 17) + 1));
+  }
+
+  // Undertone: based on hue angle from HSL.
+  // Saturation threshold calibrated against a visual comparison: below ~0.20, a color reads as
+  // "barely visible warmth / essentially gray" on the salon floor, not as a named hue. Without
+  // this, a near-gray photo with a faint warm cast was being labeled "レッド系" just because its
+  // hue angle happened to fall in the red band — true mathematically, but not how it reads by eye.
+  //
+  // At very dark levels (near-black hair), the FIXED 0.20 threshold isn't strict enough: HSL
+  // saturation is mathematically unstable as lightness approaches 0 — tiny RGB differences from
+  // photo noise, JPEG compression, or lighting reflections get amplified into large saturation
+  // numbers purely as an artifact of the math, not because the hair actually shows a visible
+  // undertone. A real salon-floor distinction can't be made at level 1-2 at all (per direct
+  // feedback, a level-1 photo that read as "オレンジ系" led the lift-planning search into a
+  // nonsensical result chasing a tone that wasn't really there). So the saturation threshold
+  // scales up as level decreases below a low-level cutoff, requiring proportionally stronger
+  // evidence of real color before naming a hue at very dark levels, while leaving the threshold
+  // unchanged (0.20) from that cutoff upward where the math is stable enough to trust directly.
+  const DARK_LEVEL_NEUTRAL_CUTOFF = 4; // below this level, saturation reads are noise-prone
+  const neutralSatThreshold = level < DARK_LEVEL_NEUTRAL_CUTOFF
+    ? 0.20 + (DARK_LEVEL_NEUTRAL_CUTOFF - level) * 0.15 // up to +0.45 extra at level 1
+    : 0.20;
+  const {h: hue, s: sat} = rgbToHsl(r,g,b);
+  let toneLabel, toneKey, toneColor;
+  if(sat < neutralSatThreshold){
+    toneLabel = 'ニュートラル(無彩色寄り)'; toneKey='neutral'; toneColor='#9a9a92';
+  } else if(hue >= 0 && hue < 25){
+    toneLabel = 'レッド系'; toneKey='red'; toneColor='#c0392b';
+  } else if(hue >= 25 && hue < 50){
+    toneLabel = 'オレンジ系'; toneKey='orange'; toneColor='#c97b4a';
+  } else if(hue >= 50 && hue < 75){
+    toneLabel = 'イエロー/ゴールド系'; toneKey='yellow'; toneColor='#c9a227';
+  } else if(hue >= 75 && hue < 160){
+    toneLabel = 'グリーン/アッシュ系'; toneKey='green'; toneColor='#6b8e63';
+  } else if(hue >= 160 && hue < 260){
+    toneLabel = 'ブルー/アッシュ系'; toneKey='blue'; toneColor='#4a6f8e';
+  } else if(hue >= 260 && hue < 320){
+    toneLabel = 'バイオレット系'; toneKey='violet'; toneColor='#7c5295';
+  } else {
+    toneLabel = 'レッド系'; toneKey='red'; toneColor='#c0392b';
+  }
+
+  return { r, g, b, hex, level, hue, sat, toneLabel, toneKey, toneColor, luminance, dominantShare, cropDataUrl };
+}
+
+function rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h=0, s=0;
+  const l=(max+min)/2;
+  const d = max-min;
+  if(d !== 0){
+    s = d / (1 - Math.abs(2*l-1));
+    switch(max){
+      case r: h = ((g-b)/d) % 6; break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h *= 60;
+    if(h<0) h+=360;
+  }
+  return {h, s, l};
+}
+
+function hslToRgb(h, s, l){
+  const c = (1 - Math.abs(2*l - 1)) * s;
+  const x = c * (1 - Math.abs((h/60) % 2 - 1));
+  const m = l - c/2;
+  let r,g,b;
+  if(h < 60){ r=c; g=x; b=0; }
+  else if(h < 120){ r=x; g=c; b=0; }
+  else if(h < 180){ r=0; g=c; b=x; }
+  else if(h < 240){ r=0; g=x; b=c; }
+  else if(h < 300){ r=x; g=0; b=c; }
+  else { r=c; g=0; b=x; }
+  return {
+    r: Math.round((r+m)*255),
+    g: Math.round((g+m)*255),
+    b: Math.round((b+m)*255)
+  };
+}
+
+function hslToHex(h, s, l){
+  const {r,g,b} = hslToRgb(h,s,l);
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
+
+// Level (1-18) -> approximate target lightness (0-1), inverse of the analysis curve,
+// used to render "what level N would roughly look like" for the gradient strip.
+function levelToLightness(level){
+  const t = (level - 1) / 17; // 0..1
+  return Math.pow(t, 1/0.9) * 0.92 + 0.04; // keep within a believable hair-lightness band
+}
+function lightnessToLevel(lightness){
+  const t = Math.max(0, Math.min(1, (lightness - 0.04) / 0.92));
+  const norm = Math.pow(t, 0.9);
+  return Math.max(1, Math.min(18, norm * 17 + 1));
+}
+
+// --- Perceptual level space ---------------------------------------------------------------
+// Per direct salon feedback: level (1-18) is NOT a linear ruler for either lift or deposit
+// effects. A color-only (non-bleach) lift ceiling sits around level 14-15 — as the starting
+// level approaches that ceiling, the same lifting agent has less and less room to actually lift
+// (a formula that takes Lv5 to Lv12 does NOT take Lv12 to Lv19; it barely moves Lv12 at all,
+// since there's hardly any ceiling headroom left). The mirror image holds for deposit/darkening
+// near the bottom of the scale (Lv1) — a formula designed to pull Lv13 down to Lv12 does NOT
+// reliably pull Lv6 down to Lv5, because there's little room left to darken further.
+//
+// Modeled as a logistic-like S-curve: perceptualLevelPosition maps level 1-18 onto 0-1 such
+// that EQUAL STEPS in perceptual space correspond to LARGER real-level steps in the middle of
+// the range and SMALLER real-level steps near the ceiling (~14-15) and floor (~1-2) — i.e. the
+// same nominal level-gap "costs" more lifting/depositing power in the middle than at the edges,
+// which is the inverse of how naively averaging two level numbers behaves. This is then used to
+// blend TWO DIFFERENT mixing channels at different weights (see weightedLevelBlend / NOTE below):
+// the LEVEL/lightness result leans toward the higher (lighter) ingredient — its lift carries
+// further — while the depth/saturation (how much actual dye color shows through) leans toward
+// the lower (darker) ingredient — its pigment concentration carries further.
+const PERCEPTUAL_CEILING_LEVEL = 14.5; // color-only lift ceiling — bleach territory beyond this
+const PERCEPTUAL_FLOOR_LEVEL = 1.5;    // practical deposit floor — near-black has little room left
+
+function perceptualLevelPosition(level){
+  // Distance-to-ceiling and distance-to-floor, each compressed by an inverse-square falloff so
+  // headroom shrinks fast as a level approaches either edge (mirrors the "頭打ち" behavior
+  // described directly: Lv12 starting point has almost no lift headroom left toward Lv14-15).
+  const distToCeiling = Math.max(0.3, PERCEPTUAL_CEILING_LEVEL - level);
+  const distToFloor = Math.max(0.3, level - PERCEPTUAL_FLOOR_LEVEL);
+  // A level's perceptual "openness" is proportional to how much headroom it has on BOTH sides —
+  // a level near either edge has compressed openness; a mid-range level has the most.
+  const openness = distToCeiling * distToFloor;
+  return openness;
+}
+
+// Convert the raw openness curve into a monotonic 0-1 position usable for blend weighting,
+// normalized against the full 1-18 range's own openness values.
+function perceptualLevelPositionNormalized(level){
+  const raw = perceptualLevelPosition(level);
+  const minOpen = perceptualLevelPosition(1);
+  const maxLevelForMaxOpenness = (PERCEPTUAL_CEILING_LEVEL + PERCEPTUAL_FLOOR_LEVEL) / 2;
+  const maxOpen = perceptualLevelPosition(maxLevelForMaxOpenness);
+  return Math.max(0, Math.min(1, (raw - minOpen) / (maxOpen - minOpen)));
+}
+
+// Blend two levels (e.g. two product shades being mixed) into a resulting LEVEL, biasing the
+// result toward the HIGHER (lighter) level when that level still has meaningful lift headroom —
+// i.e. its lifting power "wins" the blend more than a naive ratio-based average would give it.
+// linearWeightHigh/linearWeightLow are the nominal mix ratio (e.g. 1:1 -> 0.5/0.5).
+//
+// Calibrated against direct salon feedback: a 1:1 mix of Lv13 and Lv8 product lifts to roughly
+// Lv11, not the naive average (Lv10.5) — and notably NOT all the way to Lv13, since the high
+// side's pull, while dominant, isn't absolute. PUSH_RATIO_EXPONENT and PUSH_RATIO_BOOST below are
+// the two constants tuned to reproduce that specific reported case (13+8 -> ~11) while keeping
+// the ceiling-compression behavior (a level already near PERCEPTUAL_CEILING_LEVEL has little
+// extra headroom left to pull with, so its dominance fades out near the ceiling rather than
+// staying constant).
+const PUSH_RATIO_EXPONENT = 0.5;
+const PUSH_RATIO_BOOST = 0.7;
+
+function weightedLevelBlendForLift(levelHigh, levelLow, linearWeightHigh, linearWeightLow){
+  const headroomHigh = Math.max(0.3, PERCEPTUAL_CEILING_LEVEL - levelHigh);
+  const headroomLow = Math.max(0.3, levelLow - PERCEPTUAL_FLOOR_LEVEL);
+  // How much MORE headroom the high side has relative to the combined headroom of both sides —
+  // this is what actually determines how much extra pull the high side gets, not its absolute
+  // headroom alone (a high level can still dominate a blend against an even-more-constrained low
+  // level, even if its own absolute headroom isn't huge).
+  const pushRatio = Math.pow(headroomHigh / (headroomHigh + headroomLow), PUSH_RATIO_EXPONENT);
+  const biasedWeightHigh = linearWeightHigh + (linearWeightHigh + linearWeightLow) * pushRatio * PUSH_RATIO_BOOST;
+  const total = biasedWeightHigh + linearWeightLow;
+  return (levelHigh * biasedWeightHigh + levelLow * linearWeightLow) / total;
+}
+
+// Inverse of weightedLevelBlendForLift, solved for the LOW-side weight `w` (with the high-side
+// weight fixed at 1.0 — the underlying pigment/base's own weight in the mix) that makes the
+// blend land exactly on `targetLift`. Used so the search can ENFORCE "effective lift level must
+// equal the goal level" as a hard constraint, then optimize purely for color cleanliness within
+// that constraint — per direct salon feedback that diluting lift power should be compensated by
+// choosing a higher (lighter) starting level, not accepted as a trade-off the search can wander
+// into freely. Returns null if no valid non-negative weight achieves the target (e.g. levelHigh
+// is already below the target, or the target is unreachable given levelLow's own position).
+function solveCorrectiveWeightForTargetLift(levelHigh, levelLow, targetLift){
+  if(targetLift > levelHigh + 0.01) return null; // corrective pigment never lifts further, only dilutes
+  if(Math.abs(targetLift - levelHigh) < 0.001) return 0; // already exactly at target with no correction
+  const headroomHigh = Math.max(0.3, PERCEPTUAL_CEILING_LEVEL - levelHigh);
+  const headroomLow = Math.max(0.3, levelLow - PERCEPTUAL_FLOOR_LEVEL);
+  const pushRatio = Math.pow(headroomHigh / (headroomHigh + headroomLow), PUSH_RATIO_EXPONENT);
+  const boost = PUSH_RATIO_BOOST;
+  const numerator = -boost*levelHigh*pushRatio + boost*pushRatio*targetLift - levelHigh + targetLift;
+  const denominator = boost*levelHigh*pushRatio - boost*pushRatio*targetLift + levelLow - targetLift;
+  if(Math.abs(denominator) < 1e-9) return null;
+  const w = numerator / denominator;
+  if(!isFinite(w) || w < 0) return null;
+  return w;
+}
+
+// Blend two levels' DEPTH/SATURATION character, biasing toward the LOWER (darker) level when it
+// still has meaningful room above the floor — its pigment concentration "wins" the blend more
+// than a naive ratio-based average, mirroring weightedLevelBlendForLift's logic but mirrored
+// toward the floor instead of the ceiling. Used when blending how much actual dye color/depth
+// shows through, as opposed to the resulting lightness/level number itself. Uses the same
+// push-ratio constants as the lift side for consistency (the underlying "headroom" reasoning is
+// symmetric between the two), since no separate calibration case was reported for the dye side.
+function weightedDepthBlendForDye(levelHigh, levelLow, linearWeightHigh, linearWeightLow){
+  const headroomHigh = Math.max(0.3, PERCEPTUAL_CEILING_LEVEL - levelHigh);
+  const headroomLow = Math.max(0.3, levelLow - PERCEPTUAL_FLOOR_LEVEL);
+  const pushRatio = Math.pow(headroomLow / (headroomHigh + headroomLow), PUSH_RATIO_EXPONENT);
+  const biasedWeightLow = linearWeightLow + (linearWeightHigh + linearWeightLow) * pushRatio * PUSH_RATIO_BOOST;
+  const total = linearWeightHigh + biasedWeightLow;
+  return { weightHigh: linearWeightHigh / total, weightLow: biasedWeightLow / total };
+}
+
+// Qualucia (クオルシア) color palette, extracted from the salon's own color chart photo.
+// Each entry's hex is sampled directly from the chart swatch, so it reflects the actual product color.
+const qualuciaPalette = [
+  { name: 'ハイライトナー', nameEn: 'High Lightner', level: 14, hex: '#dfdecb' },
+  { name: 'シルバーアッシュ', nameEn: 'Silver Ash', level: 14, hex: '#7c7194' },
+  { name: 'ラベンダー', nameEn: 'Lavender', level: 14, hex: '#765179' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 14, hex: '#a4918c' },
+  { name: 'グレー', nameEn: 'Gray', level: 13, hex: '#746e6e' },
+  { name: 'シルバー', nameEn: 'Silver', level: 13, hex: '#8c818f' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 13, hex: '#847265' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 13, hex: '#a7877f' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 13, hex: '#a08071' },
+  { name: 'グレー', nameEn: 'Gray', level: 11, hex: '#57514e' },
+  { name: 'シルバー', nameEn: 'Silver', level: 11, hex: '#716770' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 11, hex: '#635346' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 11, hex: '#90716a' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 11, hex: '#8f7166' },
+  { name: 'グレー', nameEn: 'Gray', level: 9, hex: '#46423f' },
+  { name: 'シルバー', nameEn: 'Silver', level: 9, hex: '#60575c' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 9, hex: '#463b32' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 9, hex: '#82625a' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 9, hex: '#735648' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 8, hex: '#523d34' },
+  { name: 'グレー', nameEn: 'Gray', level: 7, hex: '#47433f' },
+  { name: 'シルバー', nameEn: 'Silver', level: 7, hex: '#564d52' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 7, hex: '#342b27' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 7, hex: '#5c3f36' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 7, hex: '#37261f' },
+  { name: 'グレー', nameEn: 'Gray', level: 5, hex: '#363430' },
+  { name: 'シルバー', nameEn: 'Silver', level: 5, hex: '#352e2f' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 5, hex: '#28221e' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 5, hex: '#412c27' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 5, hex: '#291d18' },
+  { name: 'グリーン', nameEn: 'Green', level: 6, hex: '#2f4a3b' },
+  { name: 'コーラルピンク', nameEn: 'Coral Pink', level: 10, hex: '#79474c' },
+  { name: 'イエロー', nameEn: 'Yellow', level: 11, hex: '#e3b45a' },
+  { name: 'アクアブルー', nameEn: 'Aqua Blue', level: 7, hex: '#446073' },
+  { name: 'コーラルピンク', nameEn: 'Coral Pink', level: 6, hex: '#5f3a3a' },
+  { name: 'オレンジ', nameEn: 'Orange', level: 10, hex: '#522c23' },
+  { name: 'ウルトラバイオレット', nameEn: 'Ultra Violet', level: 6, hex: '#443858' },
+  { name: 'カーディナルレッド', nameEn: 'Cardinal Red', level: 7, hex: '#592b2b' },
+  { name: 'ミルキーホワイト', nameEn: 'Milky White', level: 10, hex: '#ddd5ca' },
+  { name: 'ディープバイオレット', nameEn: 'Deep Violet', level: 5, hex: '#2c2130' },
+  { name: 'レッド', nameEn: 'Red', level: 7, hex: '#482731' },
+  { name: 'クリア', nameEn: 'Clear', level: 0, hex: '#dadbcd' },
+  { name: 'ネイビーブルー', nameEn: 'Navy Blue', level: 5, hex: '#1f2130' },
+  { name: 'ピンク', nameEn: 'Pink', level: 6, hex: '#50272b' },
+  { name: 'グレージュ', nameEn: 'Greige', level: 7, hex: '#3c4044' },
+  { name: 'ネイビーブルー', nameEn: 'Navy Blue', level: 3, hex: '#1a1c27' },
+  { name: 'ピンクパール', nameEn: 'Pink Pearl', level: 6, hex: '#5d3f47' },
+  { name: 'ブラウンブースター', nameEn: 'Brown Booster', level: 3, hex: '#221d18' },
+  { name: 'ディープパープル', nameEn: 'Deep Purple', level: 5, hex: '#1f1419' },
+  { name: 'ロイヤルパープル', nameEn: 'Royal Purple', level: 3, hex: '#302235' },
+  { name: 'ブラックブースター', nameEn: 'Black Booster', level: 1, hex: '#14120f' }
+];
+
+// Fiole BL Color (フィヨーレ BLカラー) palette, extracted from the salon's own color chart photo.
+// Each hex is sampled directly from the chart swatch. Code format follows the chart's own
+// labeling: level number + tone letters (e.g. "8GB" = level 8, Gray Brown), matching how the
+// salon already refers to these products.
+const blColorPalette = [
+  { name: 'ライトナー', nameEn: '', level: 12, hex: '#cccbc3' },
+  { name: '12MT', nameEn: '', level: 12, hex: '#b6b6b4' },
+  { name: '12GN', nameEn: '', level: 12, hex: '#cec7c1' },
+  { name: '12GA', nameEn: '', level: 12, hex: '#c8cac8' },
+  { name: '12GP', nameEn: '', level: 12, hex: '#bbaaa2' },
+  { name: '12GB', nameEn: '', level: 12, hex: '#d4b9a3' },
+  { name: '12GNB', nameEn: '', level: 12, hex: '#bdaf94' },
+  { name: '12GY', nameEn: '', level: 12, hex: '#e0d396' },
+  { name: '10NN', nameEn: '', level: 10, hex: '#c8c2b6' },
+  { name: '10MT', nameEn: '', level: 10, hex: '#ababa9' },
+  { name: '10GN', nameEn: '', level: 10, hex: '#b1ab94' },
+  { name: '10GA', nameEn: '', level: 10, hex: '#b8b9b8' },
+  { name: '10GP', nameEn: '', level: 10, hex: '#af9c95' },
+  { name: '10GB', nameEn: '', level: 10, hex: '#cbad97' },
+  { name: '10GNB', nameEn: '', level: 10, hex: '#d3bd92' },
+  { name: '10GY', nameEn: '', level: 10, hex: '#d7c78c' },
+  { name: '8NN', nameEn: '', level: 8, hex: '#b5af97' },
+  { name: '8MT', nameEn: '', level: 8, hex: '#8d8e8c' },
+  { name: '8GN', nameEn: '', level: 8, hex: '#7b7b69' },
+  { name: '8GA', nameEn: '', level: 8, hex: '#858589' },
+  { name: '8GP', nameEn: '', level: 8, hex: '#a3897e' },
+  { name: '8GB', nameEn: '', level: 8, hex: '#836551' },
+  { name: '8GNB', nameEn: '', level: 8, hex: '#907a5b' },
+  { name: '8GY', nameEn: '', level: 8, hex: '#9d8e66' },
+  { name: '7NN', nameEn: '', level: 7, hex: '#9a9880' },
+  { name: '7MT', nameEn: '', level: 7, hex: '#727070' },
+  { name: '7GN', nameEn: '', level: 7, hex: '#6a6b57' },
+  { name: '7GA', nameEn: '', level: 7, hex: '#63646d' },
+  { name: '7GP', nameEn: '', level: 7, hex: '#7c635f' },
+  { name: '7GB', nameEn: '', level: 7, hex: '#4d3830' },
+  { name: '7GNB', nameEn: '', level: 7, hex: '#675340' },
+  { name: '7GY', nameEn: '', level: 7, hex: '#817452' },
+  { name: '6NN', nameEn: '', level: 6, hex: '#807a62' },
+  { name: '6MT', nameEn: '', level: 6, hex: '#4d4e4d' },
+  { name: '6GN', nameEn: '', level: 6, hex: '#514f41' },
+  { name: '6GA', nameEn: '', level: 6, hex: '#444750' },
+  { name: '6GP', nameEn: '', level: 6, hex: '#463432' },
+  { name: '6GB', nameEn: '', level: 6, hex: '#35261f' },
+  { name: '6GNB', nameEn: '', level: 6, hex: '#493a2c' },
+  { name: '6GY', nameEn: '', level: 6, hex: '#5a4e36' },
+  { name: '5NN', nameEn: '', level: 5, hex: '#504b3d' },
+  { name: '5MT', nameEn: '', level: 5, hex: '#1f1e1e' },
+  { name: '5GN', nameEn: '', level: 5, hex: '#2e2e28' },
+  { name: '5GA', nameEn: '', level: 5, hex: '#2e3139' },
+  { name: '5GP', nameEn: '', level: 5, hex: '#301f1f' },
+  { name: '5GB', nameEn: '', level: 5, hex: '#231917' },
+  { name: '5GNB', nameEn: '', level: 5, hex: '#332920' },
+  { name: '5GY', nameEn: '', level: 5, hex: '#3e3224' },
+  { name: '4NN', nameEn: '', level: 4, hex: '#403e32' },
+  { name: '4MT', nameEn: '', level: 4, hex: '#141413' },
+  { name: '4GN', nameEn: '', level: 4, hex: '#232721' },
+  { name: '4GA', nameEn: '', level: 4, hex: '#22252e' },
+  { name: '4GP', nameEn: '', level: 4, hex: '#281f1d' },
+  { name: '4GB', nameEn: '', level: 4, hex: '#170e0a' },
+  { name: '4GNB', nameEn: '', level: 4, hex: '#241d14' },
+  { name: '4GY', nameEn: '', level: 4, hex: '#2f281b' },
+  { name: '9NN', nameEn: '', level: 9, hex: '#c3beac' },
+  { name: '3NN', nameEn: '', level: 3, hex: '#1d1e1d' },
+  { name: '3MT', nameEn: '', level: 3, hex: '#121311' },
+  { name: '2NN', nameEn: '', level: 2, hex: '#0c1010' },
+  { name: '2GNB', nameEn: '', level: 2, hex: '#1d180f' },
+  { name: '10YM', nameEn: '', level: 10, hex: '#6a9273' },
+  { name: '10MB', nameEn: '', level: 10, hex: '#b0c8ca' },
+  { name: '10B', nameEn: '', level: 10, hex: '#485773' },
+  { name: '10BV', nameEn: '', level: 10, hex: '#46475e' },
+  { name: '10V', nameEn: '', level: 10, hex: '#5b5860' },
+  { name: '10RV', nameEn: '', level: 10, hex: '#8f4a6e' },
+  { name: '10P', nameEn: '', level: 10, hex: '#92414b' },
+  { name: '10O', nameEn: '', level: 10, hex: '#c55b40' },
+  { name: '10C', nameEn: '', level: 10, hex: '#a56357' },
+  { name: '8YM', nameEn: '', level: 8, hex: '#485f4a' },
+  { name: '8MB', nameEn: '', level: 8, hex: '#88a2a6' },
+  { name: '8B', nameEn: '', level: 8, hex: '#364056' },
+  { name: '8BV', nameEn: '', level: 8, hex: '#3c3f53' },
+  { name: '8V', nameEn: '', level: 8, hex: '#413b47' },
+  { name: '8RV', nameEn: '', level: 8, hex: '#6f2f51' },
+  { name: '8P', nameEn: '', level: 8, hex: '#752c39' },
+  { name: '8C', nameEn: '', level: 8, hex: '#935140' },
+  { name: '7R', nameEn: '', level: 7, hex: '#632534' },
+  { name: '7O', nameEn: '', level: 7, hex: '#af4e39' },
+  { name: '6YM', nameEn: '', level: 6, hex: '#425744' },
+  { name: '6G', nameEn: '', level: 6, hex: '#3b8260' },
+  { name: '6MB', nameEn: '', level: 6, hex: '#254a4c' },
+  { name: '6B', nameEn: '', level: 6, hex: '#182547' },
+  { name: '6BV', nameEn: '', level: 6, hex: '#3b3957' },
+  { name: '6V', nameEn: '', level: 6, hex: '#2a2754' },
+  { name: '6RV', nameEn: '', level: 6, hex: '#44192c' },
+  { name: '4V', nameEn: '', level: 4, hex: '#232148' },
+  { name: '10Y', nameEn: '', level: 10, hex: '#e5c255' }
+];
+
+const colorLines = {
+  qualucia: { label: 'クオルシア', palette: qualuciaPalette },
+  bl: { label: 'フィヨーレ BLカラー', palette: blColorPalette }
+};
+// Always mix across both brands — per salon feedback (matching オンカラー逆引き), a single-brand
+// toggle wasn't useful in practice; cross-brand mixing is the default working assumption here.
+const activeColorLine = 'cross';
+let lastNeedsDeepLift = false;
+let lastOverBleach = false;
+let lastEstimatedLift = null;
+
+// --- Base (low-saturation) product categories vs. tone-correction product categories ---------
+// Per direct salon feedback on how ニュートラル goals are actually built: rather than depositing
+// a strong single corrective pigment directly onto the bare underlying pigment, colorists start
+// from an already-muted BASE shade (グレー/シルバー/シルバーアッシュ/ラベンダー for クオルシア;
+// NN/MT/GN/GA/GP/GB/GNB/GY for フィヨーレ — these "N/A/B" suffixes already lean toward
+// neutral/ash/beige rather than a vivid hue), and then layer a smaller amount of an actual
+// TONE-CORRECTION shade (MB/B/BV/V/YM/G for フィヨーレ — the closest things to a real "single
+// pigment ash/violet/green" product that exist on this chart) on top when the base alone isn't
+// enough to clear the remaining warmth. Both lists are name-prefix/suffix matches against the
+// real palette data already defined above, so they only ever reference shades that actually ship.
+const BASE_CATEGORY_QUALUCIA_NAMES = ['グレー', 'シルバー', 'シルバーアッシュ', 'ラベンダー', 'サンドベージュ', 'ピンクベージュ', 'ベージュ', 'グレージュ', 'ライトナー'];
+const BASE_CATEGORY_BL_SUFFIXES = ['NN', 'MT', 'GN', 'GA', 'GP', 'GB', 'GNB', 'GY'];
+const BASE_CATEGORY_BL_EXACT_NAMES = ['ライトナー'];
+// Tone-correction shades: only the ones explicitly called out (MB/B/BV/V/YM/G) — these exist only
+// in the フィヨーレ BL カラー line on this chart, not as separate クオルシア entries.
+const TONE_CORRECTION_BL_SUFFIXES = ['MB', 'B', 'BV', 'V', 'YM', 'G'];
+
+function isBaseCategoryEntry(entry){
+  if(entry.brandKey === 'qualucia'){
+    return BASE_CATEGORY_QUALUCIA_NAMES.includes(entry.name);
+  }
+  if(entry.brandKey === 'bl'){
+    if(BASE_CATEGORY_BL_EXACT_NAMES.includes(entry.name)) return true;
+    return BASE_CATEGORY_BL_SUFFIXES.some(suf => entry.name.endsWith(suf));
+  }
+  return false;
+}
+
+function isToneCorrectionEntry(entry){
+  if(entry.brandKey !== 'bl') return false;
+  // Match suffix, but guard against accidental overlap with base suffixes that share letters
+  // (e.g. a name ending in "GB" should not also match "B") by checking the longest suffixes
+  // first and only matching when the preceding character is a digit (i.e. the level number),
+  // meaning the tone letters are the ENTIRE remainder of the name, not a substring of a longer
+  // base suffix.
+  const sortedSuffixes = [...TONE_CORRECTION_BL_SUFFIXES].sort((a,b) => b.length - a.length);
+  for(const suf of sortedSuffixes){
+    if(entry.name.endsWith(suf)){
+      const prefix = entry.name.slice(0, entry.name.length - suf.length);
+      if(/^\d+$/.test(prefix)) return true;
+    }
+  }
+  return false;
+}
+
+// Tone-correction direction (ash/violet/green-ish) implied by a given correction suffix, mapped
+// onto the same counterToneMap keys used elsewhere so labels/details stay consistent. Keys here
+// are the counterToneMap key for the UNDERTONE being corrected (e.g. 'yellow' = corrects yellow
+// warmth, via a violet-family shade), matching liftToneKeyFromLevel's own level-band vocabulary —
+// not the hue family of the corrective shade itself. This is a rough mapping for the 6 confirmed
+// suffixes (MB=mat blue/ash-leaning, B=blue/ash -> corrects orange; BV=blue-violet, V=violet ->
+// corrects yellow; YM=yellow-mat/green-leaning, G=green -> corrects red/brown).
+const TONE_CORRECTION_DIRECTION = {
+  MB: 'orange', B: 'orange', BV: 'yellow', V: 'yellow', YM: 'red', G: 'red'
+};
+
+function toneCorrectionSuffixOf(entry){
+  if(!isToneCorrectionEntry(entry)) return null;
+  const sortedSuffixes = [...TONE_CORRECTION_BL_SUFFIXES].sort((a,b) => b.length - a.length);
+  for(const suf of sortedSuffixes){
+    if(entry.name.endsWith(suf)){
+      const prefix = entry.name.slice(0, entry.name.length - suf.length);
+      if(/^\d+$/.test(prefix)) return suf;
+    }
+  }
+  return null;
+}
+
+// Build the full cross-brand palette once, tagged with brand/brandKey, for reuse by the neutral
+// base+correction search below (mirrors the inline cross-brand assembly used elsewhere).
+function buildCrossBrandPalette(){
+  const palette = [];
+  for(const key in colorLines){
+    const brandLabel = colorLines[key].label;
+    for(const entry of colorLines[key].palette){
+      palette.push(Object.assign({}, entry, { brand: brandLabel, brandKey: key }));
+    }
+  }
+  return palette;
+}
+
+// Recommend up to 3 real product colors closest to a target hue, near the target level.
+// "Closest" = smallest combined distance in hue (primary) and level (secondary), so the
+// suggestion is both the right color family and roughly the right lightness to be usable.
+// Blend two product colors at a given ratio (e.g. 2:1) by averaging their RGB, weighted by ratio.
+// This is an approximation of how colorists describe mixes — it won't capture pigment-level
+// chemistry, but gives a usable visual/level estimate for comparing candidate mixes.
+function blendHex(hexA, hexB, ratioA, ratioB){
+  const [ra,ga,ba] = hexToRgbArr(hexA);
+  const [rb,gb,bb] = hexToRgbArr(hexB);
+  const total = ratioA + ratioB;
+  const r = Math.round((ra*ratioA + rb*ratioB) / total);
+  const g = Math.round((ga*ratioA + gb*ratioB) / total);
+  const b = Math.round((ba*ratioA + bb*ratioB) / total);
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
+
+// --- Unified 3-axis (hue/saturation/lightness) scoring, ported from オンカラー逆引き --------
+// Replaces a simpler additive score (hue difference + level difference) that needed separate,
+// awkwardly-calibrated weights for each term. Treating hue/saturation/lightness as axes of one
+// HSL-based space and taking a weighted Euclidean distance makes the hue-vs-depth trade-off
+// explicit and tunable as a single set of weights, with hue weighted most heavily since hue
+// accuracy matters most for whether a product reads as "the right color family" at all.
+//
+// The saturation axis weight and the hue axis weight both scale with how saturated the GOAL
+// itself is: a vivid goal is scored mostly by hue (plenty of real pigment options exist nearby
+// in hue, so a small saturation gap matters less), while a muted/near-neutral goal has no real
+// hue direction to chase, so hue's contribution fades out and a product's own low saturation
+// becomes the deciding factor instead — matching how a colorist reads a near-gray goal versus a
+// clearly-colored one.
+const HUE_AXIS_WEIGHT = 7, LIGHT_AXIS_WEIGHT = 1;
+function satAxisWeightForGoal(targetSat){
+  const t = Math.max(0, Math.min(1, (targetSat - 0.2) / 0.7));
+  return 6 - t * 5; // 6 at targetSat<=0.2 (muted goals), tapering to 1 at targetSat>=0.9 (vivid goals)
+}
+function hueWeightForSaturation(targetSat){
+  return Math.max(0, Math.min(1, targetSat / 0.35));
+}
+function hslHueDistance(a, b){
+  let d = Math.abs(a - b);
+  if(d > 180) d = 360 - d;
+  return d;
+}
+// targetLevel is optional — when provided, lightness (derived from the salon's own level scale
+// via levelToLightness) is folded in as a third axis so depth accuracy factors into product
+// selection alongside hue/saturation, not just hue.
+function scoreForGoalMatch(entryHex, entryLevel, targetHue, targetSat, targetLevel){
+  const {h, s, l} = rgbToHsl(...hexToRgbArr(entryHex));
+  const hueW = hueWeightForSaturation(targetSat);
+  const hueDistNorm = hslHueDistance(h, targetHue) / 180;
+  const satDistNorm = Math.abs(s - targetSat);
+  const satAxisWeight = satAxisWeightForGoal(targetSat);
+  const hasLevelTarget = typeof targetLevel === 'number';
+  const targetLightness = hasLevelTarget ? levelToLightness(targetLevel) : l;
+  const lightDistNorm = hasLevelTarget ? Math.abs(l - targetLightness) : 0;
+
+  if(hueW <= 0.001){
+    // Goal is effectively neutral — hue has no meaning, so the score collapses to how low the
+    // product's own saturation is (plus a lightness/depth term when a target level is given).
+    return s * 40 + lightDistNorm * 40;
+  }
+  const distance = Math.sqrt(
+    Math.pow(hueDistNorm * HUE_AXIS_WEIGHT, 2) +
+    Math.pow(satDistNorm * satAxisWeight, 2) +
+    Math.pow(lightDistNorm * LIGHT_AXIS_WEIGHT, 2)
+  );
+  // Blend smoothly toward the neutral-path score as hueW approaches 0, rather than switching
+  // paths abruptly at a threshold.
+  return distance * (10 * hueW) + s * 10 * (1 - hueW);
+}
+
+// --- Two-product "straddle" blending, ported from オンカラー逆引き --------------------------
+// Rather than only trying fixed ratios (1:1, 2:1, 1:2) between arbitrarily-chosen nearby
+// products, find the closest-by-hue product BELOW the target level and the closest-by-hue
+// product AT/ABOVE it, then blend them at the exact ratio that lands the mix on the target
+// level. This keeps hue accuracy on each side (each is still chosen by hue match, not forced
+// into an unrelated family) while letting the BLEND reach the precise target depth — useful
+// when the single best-hue product overall sits at a level noticeably off the target.
+function findClosestByHueInBand(palette, targetHue, targetSat, levelMin, levelMax){
+  let best = null, bestScore = Infinity;
+  for(const entry of palette){
+    if(entry.level < levelMin || entry.level > levelMax) continue;
+    const score = scoreForGoalMatch(entry.hex, entry.level, targetHue, targetSat, null);
+    if(score < bestScore){ bestScore = score; best = entry; }
+  }
+  return best;
+}
+
+function findStraddlingPair(palette, targetHue, targetSat, targetLevel, window){
+  window = window || 4;
+  const lower = palette.filter(e => e.level <= targetLevel && e.level >= targetLevel - window);
+  const upper = palette.filter(e => e.level >= targetLevel && e.level <= targetLevel + window);
+  const belowEntry = findClosestByHueInBand(lower, targetHue, targetSat, targetLevel - window, targetLevel);
+  const aboveEntry = findClosestByHueInBand(upper, targetHue, targetSat, targetLevel, targetLevel + window);
+
+  if(belowEntry && aboveEntry && belowEntry.name !== aboveEntry.name){
+    if(belowEntry.level === aboveEntry.level){
+      return { primary: belowEntry, secondary: null, primaryWeight: 1, secondaryWeight: 0 };
+    }
+    const span = aboveEntry.level - belowEntry.level;
+    const aboveWeight = (targetLevel - belowEntry.level) / span;
+    const belowWeight = 1 - aboveWeight;
+    if(belowWeight < 0.05) return { primary: aboveEntry, secondary: null, primaryWeight: 1, secondaryWeight: 0 };
+    if(aboveWeight < 0.05) return { primary: belowEntry, secondary: null, primaryWeight: 1, secondaryWeight: 0 };
+
+    // If blending actually lands further from the goal's own saturation than just using the
+    // better-matching single side would, use that side alone rather than diluting it.
+    const blendedHex = blendHex(belowEntry.hex, aboveEntry.hex, belowWeight, aboveWeight);
+    const { s: blendedSat } = rgbToHsl(...hexToRgbArr(blendedHex));
+    const { s: belowSat } = rgbToHsl(...hexToRgbArr(belowEntry.hex));
+    const { s: aboveSat } = rgbToHsl(...hexToRgbArr(aboveEntry.hex));
+    const blendGap = Math.abs(blendedSat - targetSat);
+    const belowGap = Math.abs(belowSat - targetSat);
+    const aboveGap = Math.abs(aboveSat - targetSat);
+    const betterSide = belowGap <= aboveGap ? { entry: belowEntry, gap: belowGap } : { entry: aboveEntry, gap: aboveGap };
+    if(betterSide.gap < blendGap - 0.08){
+      return { primary: betterSide.entry, secondary: null, primaryWeight: 1, secondaryWeight: 0 };
+    }
+    return { primary: belowEntry, secondary: aboveEntry, primaryWeight: belowWeight, secondaryWeight: aboveWeight };
+  }
+  const single = belowEntry || aboveEntry;
+  if(!single) return null;
+  return { primary: single, secondary: null, primaryWeight: 1, secondaryWeight: 0 };
+}
+
+// Recommend up to N candidates closest to a target hue/level, considering both single products
+// and 2-product mixes. Single colors and mixes are scored on the same scale and merged into one
+// ranked list, so the result is simply "the best options", whichever type they are — matching
+// how a colorist already thinks about mixing on the fly.
+//
+// paletteKey: a key in colorLines (single brand), OR the literal 'cross' to draw from every
+// brand's palette at once and allow mixes that combine two different manufacturers' colors.
+// Cross-brand mixing is a color-matching estimate only — it says nothing about whether two
+// products are chemically compatible to actually combine on real hair, so each candidate is
+// tagged with its brand so the person can see at a glance when a suggestion crosses brands.
+function recommendProductColors(paletteKey, targetHue, targetLevel, maxResults, liftLevelHint, targetSat){
+  maxResults = maxResults || 3;
+
+  let palette;
+  if(paletteKey === 'cross'){
+    palette = [];
+    for(const key in colorLines){
+      const brandLabel = colorLines[key].label;
+      for(const entry of colorLines[key].palette){
+        palette.push(Object.assign({}, entry, { brand: brandLabel, brandKey: key }));
+      }
+    }
+  } else {
+    const brandLabel = colorLines[paletteKey].label;
+    palette = colorLines[paletteKey].palette.map(entry =>
+      Object.assign({}, entry, { brand: brandLabel, brandKey: paletteKey })
+    );
+  }
+
+  // Default targetSat to a fully-saturated assumption when not provided (existing callers that
+  // only pass hue/level keep behaving as a hue-led match, same as before this change).
+  const effectiveTargetSat = (typeof targetSat === 'number') ? targetSat : 0.6;
+
+  function scoreOf(hex, level){
+    return scoreForGoalMatch(hex, level, targetHue, effectiveTargetSat, targetLevel);
+  }
+
+  function labelFor(entry){
+    return paletteKey === 'cross' ? `${entry.name}(${entry.brand})` : entry.name;
+  }
+
+  const singleCandidates = [];
+  for(const entry of palette){
+    singleCandidates.push({
+      type: 'single',
+      hex: entry.hex,
+      level: entry.level,
+      score: scoreOf(entry.hex, entry.level),
+      label: entry.name,
+      labelEn: entry.nameEn,
+      brand: entry.brand
+    });
+  }
+
+  // Standard mix candidates: straddle the target level with the closest-by-hue product BELOW
+  // it and the closest-by-hue product AT/ABOVE it (ported from オンカラー逆引き), rather than
+  // trying fixed 1:1/2:1/1:2 ratios between arbitrarily nearby products. This lands the blend
+  // precisely on the target level while keeping each ingredient chosen for hue accuracy. A
+  // same-brand vs. cross-brand distinction is still tagged for display.
+  const standardMixes = [];
+  let mixWindow = 4;
+  let straddleResult = null;
+  while(mixWindow <= 15 && !straddleResult){
+    const result = findStraddlingPair(palette, targetHue, effectiveTargetSat, targetLevel, mixWindow);
+    if(result && result.secondary){
+      straddleResult = result;
+      break;
+    } else if(result && !straddleResult){
+      straddleResult = result; // keep as fallback, but keep widening for a chance at a real straddle
+    }
+    mixWindow += 3;
+  }
+  if(straddleResult && straddleResult.secondary){
+    const a = straddleResult.primary, b = straddleResult.secondary;
+    // a=primary is the lower-level (below) entry, b=secondary is the higher-level (above) entry
+    // per findStraddlingPair's own convention. The color/depth blend and the level blend use
+    // DIFFERENT weight biases (per direct salon feedback): depth/pigment concentration leans
+    // toward the lower (darker, more concentrated) entry, while the resulting LEVEL leans toward
+    // the higher (lighter, stronger-lifting) entry — weightedDepthBlendForDye and
+    // weightedLevelBlendForLift each capture one side of that asymmetry.
+    const depthWeights = weightedDepthBlendForDye(b.level, a.level, straddleResult.secondaryWeight, straddleResult.primaryWeight);
+    const mixedHex = blendHex(a.hex, b.hex, depthWeights.weightLow, depthWeights.weightHigh);
+    const mixedLevel = weightedLevelBlendForLift(b.level, a.level, straddleResult.secondaryWeight, straddleResult.primaryWeight);
+    const crossBrandPenalty = (a.brandKey !== b.brandKey) ? 1.2 : 0;
+    // Round weights to a readable whole-number ratio out of 10 for display.
+    const aShare = Math.round(straddleResult.primaryWeight * 10);
+    const bShare = 10 - aShare;
+    standardMixes.push({
+      type: 'mix',
+      hex: mixedHex,
+      level: mixedLevel,
+      score: scoreOf(mixedHex, mixedLevel) + crossBrandPenalty,
+      label: `${labelFor(a)} : ${labelFor(b)}`,
+      labelEn: '',
+      ratio: `${aShare}:${bShare}`,
+      crossBrand: a.brandKey !== b.brandKey
+    });
+  }
+
+  // Dye-correction mixes: deliberately combine a HIGH-level product (strong lift, thin/weak dye
+  // load) with a LOW-level product (little to no lift, but much more concentrated pigment) at the
+  // SAME hue family. This models a real technique — using the high-level shade to carry the lift,
+  // and the low-level shade to carry enough actual pigment to correct/hold the tone — rather than
+  // treating a big level gap between ingredients as automatically wrong. Only pairs sharing a
+  // reasonably close hue are considered, since the point is tone correction, not color clashing;
+  // no own-level-gap penalty is applied here, since the gap IS the technique.
+  //
+  // Two constraints reflect how this is actually mixed in the salon:
+  //  1. The high-lift ingredient needs to be AT LEAST half the mix (ratio >= 1:1 in its favor) —
+  //     a thin pour of the high-level shade can't reliably carry the lift to that level. A ratio
+  //     like 1:2 (high:low) would under-deliver on lift, so only ratios at or above 1:1 for the
+  //     high-level side are offered here.
+  //  2. The low-level (pigment-correction) ingredient should sit BELOW the goal's own depth, not
+  //     just "below 8" generically — e.g. for a level-6 goal, the corrective shade should come
+  //     from the 3-5 range, not from a level-7 or 8 shade that's barely darker than the goal
+  //     itself and wouldn't carry meaningfully more pigment concentration.
+  //  3. When a specific lift target is known (e.g. the lift-planning logic determined that
+  //     reaching level 14 is needed), the high-lift ingredient should be drawn from NEAR that
+  //     lift level specifically — not just "any level 11+" — since a level-20 shade carries much
+  //     less of the level-14 lift behavior than an actual level-14 (or close) shade would.
+  const dyeCorrectionMixes = [];
+  const liftTarget = (typeof liftLevelHint === 'number') ? liftLevelHint : null;
+  let highBand = liftTarget
+    ? palette.filter(e => e.level >= 11 && Math.abs(e.level - liftTarget) <= 2)
+    : palette.filter(e => e.level >= 11);
+  if(highBand.length === 0){
+    // No product sits near the exact lift target (e.g. this brand has no level-14 shade) —
+    // fall back to the closest available high-level shades rather than showing nothing.
+    highBand = palette.filter(e => e.level >= 11);
+  }
+  const lowBandCeiling = Math.max(1, Math.min(8, Math.round(targetLevel) - 1));
+  const lowBand = palette.filter(e => e.level <= lowBandCeiling);
+  const dyeRatioPairs = [[1,1],[2,1],[3,1]]; // high-lift side always >= low side, per constraint 1
+  for(const a of highBand){
+    const {h: hueA} = rgbToHsl(...hexToRgbArr(a.hex));
+    for(const b of lowBand){
+      const {h: hueB} = rgbToHsl(...hexToRgbArr(b.hex));
+      let hueGap = Math.abs(hueA - hueB);
+      if(hueGap > 180) hueGap = 360 - hueGap;
+      if(hueGap > 35) continue; // only same-family hues — this technique corrects tone, not hue
+      for(const [ra,rb] of dyeRatioPairs){
+        // a = high-lift ingredient, b = low-level (pigment-correction) ingredient, per this
+        // technique's own convention — same (high, low) roles as elsewhere, now using the same
+        // shared non-linear blend functions instead of this mix type's own hand-tuned 1.3x level
+        // factor, so all three mixing paths (standard straddle, dye-correction, base+corrective)
+        // reflect the same calibrated headroom-based asymmetry.
+        const depthWeights = weightedDepthBlendForDye(a.level, b.level, ra, rb);
+        const mixedHex = blendHex(b.hex, a.hex, depthWeights.weightLow, depthWeights.weightHigh);
+        const mixedLevel = weightedLevelBlendForLift(a.level, b.level, ra, rb);
+        const crossBrandPenalty = (a.brandKey !== b.brandKey) ? 1.2 : 0;
+        dyeCorrectionMixes.push({
+          type: 'dyeMix',
+          hex: mixedHex,
+          level: mixedLevel,
+          score: scoreOf(mixedHex, mixedLevel) + crossBrandPenalty,
+          label: `${labelFor(a)} : ${labelFor(b)}`,
+          labelEn: '',
+          ratio: `${ra}:${rb}`,
+          crossBrand: a.brandKey !== b.brandKey,
+          liftSource: labelFor(a),
+          dyeSource: labelFor(b)
+        });
+      }
+    }
+  }
+
+  function rankAndDedupe(list, n){
+    list.sort((x,y) => x.score - y.score);
+    const picked = [];
+    for(const c of list){
+      if(picked.length >= n) break;
+      const tooSimilar = picked.some(p => {
+        const [r1,g1,b1] = hexToRgbArr(p.hex);
+        const [r2,g2,b2] = hexToRgbArr(c.hex);
+        return Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2) < 12;
+      });
+      if(!tooSimilar) picked.push(c);
+    }
+    return picked;
+  }
+
+  const standard = rankAndDedupe(singleCandidates.concat(standardMixes), maxResults);
+  const dyeCorrection = rankAndDedupe(dyeCorrectionMixes, 3);
+
+  return { standard, dyeCorrection };
+}
+
+// --- Unified recipe candidates: 希望色(straddle) + 補色(only if needed), with both the product
+// color and the realistic on-hair result shown together --------------------------------------
+// Replaces showing 単品おすすめ / 補色バリエーション / 染料補正ミックス as three separate
+// strips. In practice a colorist doesn't think in those three buckets — they pick a base shade
+// (or two, straddled to hit the depth), decide whether the underlying warmth needs cancelling,
+// and look at the resulting mixed color once. This builds that single combined answer:
+//   1. 希望色 — the same straddle-by-hue logic as recommendProductColors' standardMixes
+//   2. 補色 — added only when the underlying pigment at the lift level is far enough from the
+//      goal's own hue to muddy it (reusing the existing red/orange/yellow undertone → counter
+//      color mapping), at a modest, fixed share rather than a separate strength variant
+//   3. The realized swatch is the SUBTRACTIVE mix of the assembled tint over the actual
+//      underlying pigment at the relevant level — i.e. what it would actually look like
+//      deposited on that hair — not just an additive blend of the ingredients' own colors.
+function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, underlyingHex, underlyingToneKey, maxResults, forceCounter, correctiveWeight, correctiveProductOverride){
+  maxResults = maxResults || 3;
+
+  let palette;
+  if(paletteKey === 'cross'){
+    palette = [];
+    for(const key in colorLines){
+      const brandLabel = colorLines[key].label;
+      for(const entry of colorLines[key].palette){
+        palette.push(Object.assign({}, entry, { brand: brandLabel, brandKey: key }));
+      }
+    }
+  } else {
+    const brandLabel = colorLines[paletteKey].label;
+    palette = colorLines[paletteKey].palette.map(entry =>
+      Object.assign({}, entry, { brand: brandLabel, brandKey: paletteKey })
+    );
+  }
+
+  function labelFor(entry){
+    // クオルシアの製品名はレベルを含まない色名のみ(例: 「シルバーアッシュ」)なので、
+    // どのレベルの瓶を指しているか分かるようLv番号を付記する。フィヨーレBLカラーは
+    // 元の表記自体にレベル数字が入っている(例: 「12MT」)ため、二重表記を避けて付記しない。
+    const withLevel = entry.brandKey === 'qualucia' ? `${entry.name}(Lv${entry.level})` : entry.name;
+    return paletteKey === 'cross' ? `${withLevel}(${entry.brand})` : withLevel;
+  }
+
+  // Convert the corrective weight from searchLiftLevelAndWeight's coordinate system (weight
+  // relative to the underlying pigment, e.g. w=0.2 to w=3.0) into a percentage share of the
+  // FINAL MIXED PRODUCT (希望色カラー剤 + 補色), the way a colorist actually measures out a
+  // formula — "5g of corrective tint mixed into 30g of color" reads as roughly a 14% share of
+  // the tube, not as "0.2x the underlying hair". correctiveSharePercent below is exactly that:
+  // the corrective pigment's share of the (base color + corrective) mixture.
+  const hasCorrectiveWeight = typeof correctiveWeight === 'number';
+  const correctiveSharePercent = hasCorrectiveWeight
+    ? Math.round((correctiveWeight / (1 + correctiveWeight)) * 100)
+    : 20; // fallback to the previous fixed 20% when no weight was supplied
+
+  // Build a handful of straddle candidates at different window sizes, rather than just the
+  // single tightest one, so there's something to rank/dedupe into a short list — mirrors how
+  // recommendProductColors widens its search window, but keeps a few intermediate results
+  // instead of only the first successful straddle.
+  const candidates = [];
+  const triedWindows = [4, 7, 10, 14];
+  for(const window of triedWindows){
+    const result = findStraddlingPair(palette, targetHue, targetSat, targetLevel, window);
+    if(!result) continue;
+
+    const a = result.primary, b = result.secondary;
+    let baseHex, baseLevel, baseLabel, crossBrand;
+    if(b){
+      // Color/depth blend leans toward the lower (darker, more pigment-concentrated) entry;
+      // resulting level leans toward the higher (lighter, stronger-lifting) entry — see
+      // weightedDepthBlendForDye / weightedLevelBlendForLift for the asymmetry this reflects.
+      const depthWeights = weightedDepthBlendForDye(b.level, a.level, result.secondaryWeight, result.primaryWeight);
+      baseHex = blendHex(a.hex, b.hex, depthWeights.weightLow, depthWeights.weightHigh);
+      baseLevel = weightedLevelBlendForLift(b.level, a.level, result.secondaryWeight, result.primaryWeight);
+      const aShare = Math.round(result.primaryWeight * 10);
+      const bShare = 10 - aShare;
+      baseLabel = `${labelFor(a)}:${labelFor(b)} = ${aShare}:${bShare}`;
+      crossBrand = a.brandKey !== b.brandKey;
+    } else {
+      baseHex = a.hex;
+      baseLevel = a.level;
+      baseLabel = labelFor(a);
+      crossBrand = false;
+    }
+
+    // 補色 need: when the caller has already determined whether a counter-tone is needed
+    // (e.g. the main flow's own lift-vs-goal-level logic, which considers BOTH how far the
+    // underlying pigment's hue sits from the goal AND how much lift is actually happening),
+    // trust that decision so this strip's "補色配合" tag matches what 処方の方向性 already
+    // says — rather than re-deriving need from hue distance alone, which could disagree on a
+    // near-neutral goal (where hue itself is a noisy, low-confidence signal at low saturation).
+    const counter = counterToneMap[underlyingToneKey] || counterToneMap.orange;
+    let needsCounter;
+    if(typeof forceCounter === 'boolean'){
+      needsCounter = forceCounter && !counter.noCounterNeeded;
+    } else {
+      const {h: underHue} = rgbToHsl(...hexToRgbArr(underlyingHex));
+      let underGoalGap = Math.abs(underHue - targetHue);
+      if(underGoalGap > 180) underGoalGap = 360 - underGoalGap;
+      needsCounter = !counter.noCounterNeeded && underGoalGap > 40;
+    }
+
+    let finalHex = baseHex, finalLabel = baseLabel, counterUsed = false, correctivePercentUsed = 0;
+    if(needsCounter){
+      // 補色 share now comes from the actual (level, weight) pair searchLiftLevelAndWeight found
+      // as the best match for this goal — not a fixed 2/10 — so the displayed recipe agrees with
+      // what 処方の方向性 already determined gives the closest result, expressed here as a % share
+      // of the mixed formula (剤に対する割合) rather than the internal weight units.
+      //
+      // correctiveProductOverride, when provided, is the SAME concrete chart product (e.g. "6G")
+      // that searchLiftLevelAndWeight actually picked for this case — per direct salon feedback
+      // that corrective choices should be named as a real product, not just a hue-family label
+      // like "グリーン系". Falls back to the hand-picked counterToneMap swatch/name when no real
+      // product override was supplied (e.g. non-neutral goals using correctiveSwatchForGoal).
+      const correctiveSwatchHex = correctiveProductOverride ? correctiveProductOverride.hex : counter.swatch;
+      const correctiveLabel = correctiveProductOverride
+        ? `${correctiveProductOverride.name}(${correctiveProductOverride.brand})`
+        : counter.name;
+      finalHex = blendHex(baseHex, correctiveSwatchHex, 100 - correctiveSharePercent, correctiveSharePercent);
+      finalLabel = `${baseLabel} + ${correctiveLabel} ${correctiveSharePercent}%`;
+      counterUsed = true;
+      correctivePercentUsed = correctiveSharePercent;
+    }
+
+    // Realistic on-hair result: layer the assembled tint subtractively over the actual
+    // underlying pigment at this level, rather than just showing the tint's own color — this is
+    // what the earlier "現実的な仕上がり予測" strip did, now folded into each candidate directly.
+    const resultHex = subtractiveMixHex(underlyingHex, finalHex, 1, 1.6);
+    const [rr,rg,rb2] = hexToRgbArr(resultHex);
+    const resultLevel = lightnessToLevel(rgbToHsl(rr,rg,rb2).l);
+
+    const score = scoreForGoalMatch(resultHex, resultLevel, targetHue, targetSat, targetLevel);
+    candidates.push({
+      productHex: finalHex,
+      resultHex,
+      resultLevel,
+      label: finalLabel,
+      crossBrand,
+      counterUsed,
+      correctivePercentUsed,
+      score
+    });
+  }
+
+  candidates.sort((x,y) => x.score - y.score);
+  const picked = [];
+  for(const c of candidates){
+    if(picked.length >= maxResults) break;
+    const tooSimilar = picked.some(p => {
+      const [r1,g1,b1] = hexToRgbArr(p.resultHex);
+      const [r2,g2,b2] = hexToRgbArr(c.resultHex);
+      return Math.abs(r1-r2)+Math.abs(g1-g2)+Math.abs(b1-b2) < 10;
+    });
+    if(!tooSimilar) picked.push(c);
+  }
+  return picked;
+}
+
+// --- Lift / underlying-pigment modeling -------------------------------------------------
+// Real colorist logic separates two questions: (1) how far does the hair need to be LIFTED
+// to clear enough of its own pigment, and (2) what SINGLE-PIGMENT corrective shade gets
+// deposited on top at what strength. The goal color (e.g. "beige") is simply how that
+// subtractive mix reads once the underlying warmth is partially — not fully — cancelled by
+// the corrective pigment. See searchLiftLevelAndWeight below for the joint (level, strength)
+// search that replaces the earlier warm/cool/neutral-category branching.
+
+// Estimate the lift level needed to reach a given goal color, starting from the current level.
+//
+// REWORKED per direct salon feedback: real ワンメイク work doesn't deposit a tint that matches
+// the goal color directly. It deposits a SINGLE-PIGMENT corrective shade (ash/violet/green —
+// whichever counters the underlying warmth) at SOME strength onto the underlying pigment at a
+// given lift level, and the goal color (e.g. "beige") is simply how that subtractive mix READS
+// once the warmth is partially, not fully, cancelled. Neither the lift level nor the corrective
+// strength is fixed in advance — colorists vary both per case — so this searches BOTH jointly:
+// for each candidate lift level, try a range of corrective-pigment strengths, and find the
+// (level, strength) pair whose mixed result lands closest (by HSL distance) to the goal color.
+// The level from the best-matching pair is what's reported as "必要なアンダー".
+//
+// Why this needed reworking: an earlier version mixed a tint that WAS the goal color itself
+// (at a fixed 1:1.5 application weight) and searched only by level. That made every goal
+// trivially "reachable" right at its own visual level — for a level-9 beige, the floor (level 9)
+// always counted as converged, never surfacing the extra lift colorists actually use in practice.
+// Once the corrective-pigment-only model is used with a jointly-searched strength, weak corrective
+// strengths at the goal's own level can come arbitrarily close to ANY goal color in raw distance
+// terms (since weight has no salon-realistic floor in pure math) — but salons report a real
+// minimum effective strength below which a corrective tone doesn't reliably take hold or hold
+// evenly. CORRECTIVE_WEIGHT_FLOOR encodes that floor as a soft preference: candidates below it
+// are not excluded outright (a perfect-distance shallow match still wins if nothing deeper does
+// meaningfully better), but the search also rewards reaching the SAME quality of match at a
+// shallower-but-still-real strength vs. an unrealistically thin one — see weighted distance below.
+// For a NEUTRAL goal, find the closest-available BASE (already-muted) product at a given level —
+// e.g. グレー/シルバー/シルバーアッシュ/ラベンダー (クオルシア) or NN/MT/GN/GA/GP/GB/GNB/GY
+// (フィヨーレ). These are real, already-low-saturation shades, not the bare underlying pigment —
+// per direct salon feedback, a neutral result is normally built from one of these bases first,
+// THEN a tone-correction shade is layered on top if the base alone doesn't fully clear residual
+// warmth (see correctiveSwatchForUnderlying / TONE_CORRECTION_DIRECTION above for that second
+// layer). Picks the closest-level base entry; ties broken by lower own-saturation (cleaner base).
+function findBaseProductForLevel(level){
+  const palette = buildCrossBrandPalette();
+  const bases = palette.filter(isBaseCategoryEntry);
+  if(bases.length === 0) return null;
+  let best = null, bestScore = Infinity;
+  for(const entry of bases){
+    const levelDist = Math.abs(entry.level - level);
+    const [er,eg,eb] = hexToRgbArr(entry.hex);
+    const ownSat = rgbToHsl(er,eg,eb).s;
+    // Level match dominates (it's the primary criterion); own saturation is a tie-breaker so a
+    // cleaner-reading base wins among equally-close levels.
+    const score = levelDist * 10 + ownSat;
+    if(score < bestScore){ bestScore = score; best = entry; }
+  }
+  return best;
+}
+
+function correctiveSwatchForGoal(goalHue, goalSat){
+  // Reuses the same counterToneMap entries (ash/violet/green/etc.) already used elsewhere for
+  // counter-toning — these ARE the single-pigment corrective shades a colorist would reach for.
+  const toneKey = hueFromDegreesToToneKey(goalHue, goalSat);
+  const entry = counterToneMap[toneKey];
+  return (entry && !entry.noCounterNeeded) ? entry.swatch : counterToneMap.orange.swatch;
+}
+
+// For a NEUTRAL goal (low saturation — no real hue of its own to chase), the corrective pigment
+// isn't chosen from the goal's hue at all (there isn't one worth chasing) — it's chosen to cancel
+// whatever warmth the UNDERLYING PIGMENT at this specific level actually shows. This matters
+// because "neutral goal" was previously read as "no corrective pigment needed at all", but in
+// practice the underlying hair still comes up warm at any lift level, and that warmth still has
+// to be cancelled (typically with ash) to read as neutral/gray rather than beige-ish or muddy —
+// "no correction needed" was only ever true of the LABEL (don't say "cancel redness" when the
+// goal has no meaningful redness of its own), never true of the actual formula.
+// Reverse-lookup: counterToneMap key -> which real tone-correction suffixes belong to that
+// direction (inverse of TONE_CORRECTION_DIRECTION, built once for lookup speed).
+const DIRECTION_TO_TONE_CORRECTION_SUFFIXES = (() => {
+  const map = {};
+  for(const suf in TONE_CORRECTION_DIRECTION){
+    const dir = TONE_CORRECTION_DIRECTION[suf];
+    if(!map[dir]) map[dir] = [];
+    map[dir].push(suf);
+  }
+  return map;
+})();
+
+function correctiveSwatchForUnderlying(level, maxLevel){
+  // Per direct salon feedback: which corrective pigment cancels the underlying warmth best is
+  // decided by LEVEL BAND (liftToneKeyFromLevel — the same banding already used to describe what
+  // color emerges from the hair at a given lift stage), not by computing the underlying swatch's
+  // own hue angle. Ash darkens a mix more than green does at the same strength, so green is
+  // preferred in the lower/mid bands where keeping lightness matters more, even though ash would
+  // also be a defensible choice there in some cases — this banding reflects that practical
+  // trade-off, not a strict colorimetric rule.
+  const toneKey = liftToneKeyFromLevel(level);
+
+  // Prefer an ACTUAL tone-correction product (MB/B/BV/V/YM/G — the only such shades that really
+  // exist on this chart) in that direction, over a fixed hand-picked swatch — per direct salon
+  // feedback that corrective choices should come from real chart entries rather than an
+  // unconstrained color anywhere in that hue family.
+  //
+  // Constrained to maxLevel when provided: a corrective product's OWN level number is itself a
+  // lifting-power indicator (per direct salon feedback — "refer to the product's own level
+  // number"). If that product's level were allowed to exceed the goal's own level, blending it in
+  // could never bring the effective result back down to the goal (its lift floor would sit above
+  // the goal entirely) — so candidates are restricted to maxLevel and below, then the closest
+  // match to `level` within that ceiling is chosen.
+  const suffixesForDirection = DIRECTION_TO_TONE_CORRECTION_SUFFIXES[toneKey];
+  if(suffixesForDirection && suffixesForDirection.length > 0){
+    const palette = buildCrossBrandPalette();
+    let candidates = palette.filter(e => isToneCorrectionEntry(e) && suffixesForDirection.includes(toneCorrectionSuffixOf(e)));
+    if(typeof maxLevel === 'number'){
+      const capped = candidates.filter(e => e.level <= maxLevel);
+      if(capped.length > 0) candidates = capped;
+      // If nothing exists at or below maxLevel, fall through with the unfiltered list rather than
+      // returning nothing — a same-direction product above the cap is still better than silently
+      // picking an unrelated hand-picked swatch.
+    }
+    if(candidates.length > 0){
+      // Closest-level match among the real tone-correction shades available in this direction.
+      let best = candidates[0], bestDist = Math.abs(candidates[0].level - level);
+      for(const c of candidates){
+        const d = Math.abs(c.level - level);
+        if(d < bestDist){ best = c; bestDist = d; }
+      }
+      return { swatch: best.hex, toneKey: toneKey, productName: best.name, productBrand: best.brand, productLevel: best.level };
+    }
+  }
+
+  // Fallback to the original hand-picked counterToneMap swatch when no real tone-correction
+  // product exists in this direction (e.g. 'neutral'/'black' bands, which intentionally have no
+  // corrective pigment, or a direction with no chart entries at all). These hand-picked swatches
+  // aren't real numbered products, so they're treated as having no lift power of their own
+  // (productLevel near the floor) for the purposes of the lift-dilution calculation below.
+  const entry = counterToneMap[toneKey];
+  const valid = entry && !entry.noCounterNeeded;
+  return valid
+    ? { swatch: entry.swatch, toneKey: toneKey, productLevel: PERCEPTUAL_FLOOR_LEVEL }
+    : { swatch: counterToneMap.neutral.swatch, toneKey: 'neutral', productLevel: PERCEPTUAL_FLOOR_LEVEL };
+}
+
+const CORRECTIVE_WEIGHT_MAX = 3.0;
+const CORRECTIVE_WEIGHT_STEP = 0.1;
+
+function hslDistanceWeighted(mixedHsl, goalHue, goalSat, goalLightness){
+  let hueDiff = Math.abs(mixedHsl.h - goalHue);
+  if(hueDiff > 180) hueDiff = 360 - hueDiff;
+  const hueDistNorm = hueDiff / 180;
+  const satDist = Math.abs(mixedHsl.s - goalSat);
+  const lightDist = Math.abs(mixedHsl.l - goalLightness);
+  // Hue contributes only when the goal itself has enough saturation for hue to mean anything —
+  // mirrors the same fade-out used elsewhere (hueWeightForSaturation) rather than a hard cutoff.
+  const hueW = Math.min(1, goalSat / 0.35);
+  // NOTE on lightness weight: per direct salon feedback, matching the goal's exact lightness is
+  // much less important than how clean/transparent the result reads (i.e. how close its
+  // saturation lands to the goal's own muted saturation) — once the underlying pigment's warmth
+  // is properly cancelled, the final depth is a relatively minor concern compared to whether the
+  // result still looks muddy. Lightness weight was lowered (3→1.2) and saturation weight raised
+  // (4→5) to reflect that priority. This is a global change (not neutral-goal-only): the same
+  // "clean correction matters more than exact depth" reasoning was explicitly confirmed to apply
+  // generally, not just to low-saturation goals.
+  return Math.sqrt(
+    Math.pow(hueDistNorm * 4 * hueW, 2) +
+    Math.pow(satDist * 5, 2) +
+    Math.pow(lightDist * 1.2, 2)
+  );
+}
+
+// Perceptual "clarity" at a given lightness: raw HSL saturation mechanically drops as lightness
+// approaches 0 or 1, even for a color that reads as maximally clear/vivid to the eye. More to the
+// point for THIS use — per direct salon feedback, the SAME raw saturation number reads as far
+// less muddy/cleaner at a higher lightness (more light passing through, more translucent) than
+// at a lower lightness (denser, muddier-looking at the same saturation). This boosts how "clean"
+// a given saturation is judged to be as lightness increases, so the search rewards landing on a
+// higher (lighter) level for the SAME achieved saturation — without that alone meaning "always
+// recommend the lightest possible level" (the level-distance penalty below balances that out).
+function perceptualClarity(sat, lightness){
+  const lightnessBoost = 1 + lightness * 1.5; // higher lightness -> same saturation reads cleaner
+  return sat / lightnessBoost;
+}
+
+// Joint search over (level, correctiveWeight) minimizing distance to the goal color. Returns the
+// winning level, the weight that achieved it, and the realistic mixed-result swatch at that pair —
+// so callers can show "what it'll actually look like", not the goal photo's own color back at them.
+//
+// Pure distance minimization, with no floor/penalty on how thin the corrective application can
+// be — per direct salon feedback, the theoretically-closest (level, weight) pair should win even
+// if that means a thin application, rather than biasing the search toward "more realistic"
+// strengths through an artificial penalty (an earlier version's penalty ended up dominating the
+// actual color-distance signal and picking levels further from the goal than necessary).
+function searchLiftLevelAndWeight(goalHue, goalSat, goalLevel, currentLevel, goalLightness, ceilingLevel){
+  // For neutral goals, the corrective pigment isn't fixed in advance — it depends on which way
+  // the underlying pigment leans AT EACH CANDIDATE LEVEL (the underlying hue shifts gradually as
+  // lift increases), so it's computed inside the loop instead of once up front.
+  const isNeutralGoal = hueFromDegreesToToneKey(goalHue, goalSat) === 'neutral';
+  const correctiveHexForGoal = isNeutralGoal ? null : correctiveSwatchForGoal(goalHue, goalSat);
+  const floor = Math.max(currentLevel, Math.round(goalLevel));
+  const ceiling = (typeof ceilingLevel === 'number') ? ceilingLevel : 18;
+
+  let best = null;
+  let fallbackBest = null;
+  // Tolerance for preferring a SHALLOWER level when the match quality is nearly identical: since
+  // the loop walks lvl from shallow to deep, only overwriting `best` when a deeper level is
+  // MEANINGFULLY better (not just marginally) means the first good-enough level naturally wins
+  // and stays. For neutral goals the score now combines perceptual clarity with a level-distance
+  // penalty (see below), so this tolerance just guards against floating-point noise either way.
+  const SHALLOWER_LEVEL_TOLERANCE = 0.001;
+  // How much each level of distance from the goal's own visual level costs, in the same units as
+  // perceptualClarity's output. Calibrated against direct salon feedback: a current-Lv2,
+  // goal-Lv8 neutral case should land on an underlying lift of at least Lv10 (the person
+  // explicitly rejected Lv8 as "too shallow" once a real base PRODUCT — not just bare underlying
+  // pigment — was layered in). Re-tuned after introducing findBaseProductForLevel, since an
+  // already-muted base product made every level read cleaner than before, which previously let
+  // the level-distance penalty dominate and pull the result back down to the goal's own level.
+  const LEVEL_DISTANCE_PENALTY_PER_LEVEL = 0.0025;
+  // Minimum corrective weight for a neutral goal: w=0 (no correction at all) technically
+  // satisfies the lift-level constraint at lvl=goalLevel, but per direct salon feedback, relying
+  // on the base product alone to read as clean/neutral isn't realistic — some real corrective
+  // application is always part of building an actual neutral result, not an optional extra. This
+  // forces the search to skip any (lvl, w) pair where w would be too thin to count as a genuine
+  // application, naturally pushing the search toward a higher starting level instead (which is
+  // exactly the intended response to lift dilution, per the same feedback).
+  const MIN_NEUTRAL_CORRECTIVE_WEIGHT = 0.3;
+
+  for(let lvl = floor; lvl <= ceiling; lvl++){
+    const underHex = naturalLevelSwatch[lvl];
+
+    if(isNeutralGoal){
+      // Layer 1: underlying pigment + a real BASE product (グレー/シルバー/NN/GA/etc.) at this
+      // level — this is the starting point a colorist actually mixes from, not the bare
+      // underlying pigment. Applied at a fixed, moderate strength (1:1.2) since the base itself
+      // is already close to ready-to-use strength as a product, unlike a thin corrective dose.
+      const baseProduct = findBaseProductForLevel(lvl);
+      const baseAppliedHex = baseProduct ? subtractiveMixHex(underHex, baseProduct.hex, 1.0, 1.2) : underHex;
+      // Layer 2: tone-correction shade (MB/B/BV/V/YM/G), applied on top of the base result.
+      const underCorrective = correctiveSwatchForUnderlying(lvl, goalLevel - 2);
+      const correctiveHex = underCorrective.swatch;
+      const correctiveToneKey = underCorrective.toneKey;
+      const correctiveProductLevel = underCorrective.productLevel;
+
+      // HARD CONSTRAINT, not a soft penalty: mixing in corrective pigment dilutes the formula's
+      // actual lifting power (the corrective shade contributes little to no lift of its own).
+      // Per direct salon feedback, the right response to that dilution is choosing a HIGHER
+      // starting level to compensate — not accepting a diluted real lift as a trade-off the
+      // search can wander into. So for each candidate `lvl`, solve directly for the corrective
+      // weight that makes the EFFECTIVE lift land exactly on the goal level, then judge that
+      // level purely by how clean the resulting color is — no separate weight search loop, and
+      // no level-distance penalty term needed since the constraint enforces it structurally.
+      let w = solveCorrectiveWeightForTargetLift(lvl, correctiveProductLevel, goalLevel);
+      if(w === null) continue; // this lvl can't reach the goal level even with zero correction
+
+      const mixed = subtractiveMixHex(baseAppliedHex, correctiveHex, 1.0, w);
+      const [mr,mg,mb] = hexToRgbArr(mixed);
+      const mixedHsl = rgbToHsl(mr,mg,mb);
+      const effectiveLiftLevel = weightedLevelBlendForLift(lvl, correctiveProductLevel, 1.0, w);
+      const dist = perceptualClarity(mixedHsl.s, mixedHsl.l);
+      const candidate = { lvl, w, dist, score: dist, mixed, mixedHsl, correctiveHex, correctiveToneKey, baseProduct, baseAppliedHex, effectiveLiftLevel, correctiveProductName: underCorrective.productName, correctiveProductBrand: underCorrective.productBrand };
+
+      // Too-thin corrective applications are skipped for the PRIMARY result (per direct salon
+      // feedback, base-product-alone isn't realistic), but kept as a fallback candidate in case
+      // every single level in range happens to need a thinner-than-minimum application (e.g. the
+      // goal sits right at the lift ceiling, leaving no room for a higher level to push toward).
+      // Without this fallback, that edge case returned nothing at all rather than a usable answer.
+      if(w >= MIN_NEUTRAL_CORRECTIVE_WEIGHT){
+        if(!best || dist < best.dist - SHALLOWER_LEVEL_TOLERANCE){
+          best = candidate;
+        }
+      } else if(!fallbackBest || dist < fallbackBest.dist - SHALLOWER_LEVEL_TOLERANCE){
+        fallbackBest = candidate;
+      }
+    } else {
+      const correctiveHex = correctiveHexForGoal;
+      const correctiveToneKey = hueFromDegreesToToneKey(goalHue, goalSat);
+      for(let w = 0.2; w <= CORRECTIVE_WEIGHT_MAX; w = Math.round((w + CORRECTIVE_WEIGHT_STEP) * 10) / 10){
+        const mixed = subtractiveMixHex(underHex, correctiveHex, 1.0, w);
+        const [mr,mg,mb] = hexToRgbArr(mixed);
+        const mixedHsl = rgbToHsl(mr,mg,mb);
+        const dist = hslDistanceWeighted(mixedHsl, goalHue, goalSat, goalLightness);
+        if(!best || dist < best.dist - SHALLOWER_LEVEL_TOLERANCE){
+          best = { lvl, w, dist, score: dist, mixed, mixedHsl, correctiveHex, correctiveToneKey, baseProduct: null, baseAppliedHex: underHex, effectiveLiftLevel: lvl, correctiveProductName: null, correctiveProductBrand: null };
+        }
+      }
+    }
+  }
+  return best || fallbackBest;
+}
+
+function estimateLiftLevel(goalHue, goalSat, goalLevel, currentLevel, goalLightness){
+  const effectiveGoalLightness = (typeof goalLightness === 'number') ? goalLightness : levelToLightness(goalLevel);
+  const result = searchLiftLevelAndWeight(goalHue, goalSat, goalLevel, currentLevel, effectiveGoalLightness);
+  return result.lvl;
+}
+
+// Counter-tone map: dual-purpose entries keyed by hue family.
+// - `detail`: counter-toning use — what to use to neutralize/cancel a given undertone that's
+//   currently showing (e.g. on the existing hair, or emerging mid-lift).
+// - `detailAsGoal`: goal-color use — what single-pigment shade a colorist deposits to MAKE a
+//   goal color of this hue family, mixed subtractively over the underlying pigment so the
+//   result keeps some residual warmth rather than being a fully neutralized, clean version of
+//   the shade itself (e.g. ベージュ = アッシュ単品 deposited with some warmth still showing through).
+const counterToneMap = {
+  black:  { name: '特に強い補色は不要', detail: 'ほぼ黒に近いレベルのため、この時点では強い補色は不要です。リフトを進める中で次第にブラウン〜オレンジみが出てきます。', detailAsGoal: 'ほぼ黒に近い目的色のため、特定の単品薬剤を強く効かせる必要はありません。', swatch: '#2a2522', noCounterNeeded: true },
+  red:    { name: 'グリーン系', detail: '赤みを中和するにはグリーン下地のカラー剤、またはグリーン系のヘアマニキュアで補色します。', detailAsGoal: 'この目的色に寄せるには、グリーン系の単品薬剤を地毛アンダーに重ねます。完全に中和するのではなく、地毛の赤み・暖色を少し残した状態でこの色合いに近づけます。', swatch: '#5C7A52' },
+  orange: { name: 'ブルー/アッシュ系', detail: 'オレンジみを抑えるにはブルー系・アッシュ系のカラー剤で補色します。最も出やすいアンダートーンです。', detailAsGoal: 'この目的色(ベージュ系など)に寄せるには、ブルー系・アッシュ系の単品薬剤を地毛アンダーに重ねます。完全に中和するのではなく、地毛の暖色を少し残した状態でこの色合いに近づけます。', swatch: '#4A6F8E' },
+  yellow: { name: 'バイオレット系', detail: '黄みを抑えるにはバイオレット(紫)系のカラー剤で補色します。ハイライトでよく出る黄みに効果的です。', detailAsGoal: 'この目的色に寄せるには、バイオレット(紫)系の単品薬剤を地毛アンダーに重ねます。完全に中和するのではなく、地毛の黄み・暖色を少し残した状態でこの色合いに近づけます。', swatch: '#7C5295' },
+  green:  { name: 'レッド系', detail: 'グリーンみが出ている場合はレッド系で補色しますが、通常はブリーチ時には出にくいトーンです。', detailAsGoal: 'この目的色に寄せるには、レッド系の単品薬剤を地毛アンダーに重ねます。', swatch: '#B33B30' },
+  blue:   { name: 'オレンジ系', detail: '青みが強すぎる場合はオレンジ系で和らげますが、リフトアップの場面では通常出にくいトーンです。', detailAsGoal: 'この目的色(アッシュ・ブルー系など)に寄せるには、オレンジ系の単品薬剤を地毛アンダーに重ねます。完全に中和するのではなく、地毛の暖色を少し残した状態でこの色合いに近づけます。', swatch: '#C97B4A' },
+  violet: { name: 'イエロー系', detail: '紫みが強すぎる場合はイエロー系で和らげます。', detailAsGoal: 'この目的色に寄せるには、イエロー系の単品薬剤を地毛アンダーに重ねます。', swatch: '#C9A227' },
+  neutral:{ name: '特定の補色は不要', detail: '無彩色寄りのため、強い補色は不要で、希望トーンをそのまま乗せやすい状態です。', detailAsGoal: '無彩色寄りの目的色のため、特定の単品薬剤を強く効かせる必要はありません。', swatch: '#9a9a92', noCounterNeeded: true }
+};
+
+// Check whether the lift level found by estimateLiftLevel can realistically reach the goal's own
+// saturation, or whether the result will read as a paler/less vivid version of the goal even once
+// hue is matched. Reported honestly rather than silently lifting further, since further lift
+// doesn't reliably buy more achievable saturation — it's a real limitation of what a single
+// corrective pigment can deliver at that level, not a level-search problem to solve by lifting more.
+//
+// Reuses the SAME joint (level, weight) search as estimateLiftLevel, but pinned to the given
+// liftLevel (floor === ceiling), so the "achieved" reading reflects the best corrective-weight
+// choice at that specific level — consistent with whatever weight the main search actually found,
+// rather than a separate hardcoded weight that could disagree with it.
+function checkSaturationShortfall(liftLevel, goalHue, goalSat, goalLightnessIn){
+  const lvl = Math.max(1, Math.min(18, Math.round(liftLevel)));
+  const goalLightness = (typeof goalLightnessIn === 'number') ? goalLightnessIn : levelToLightness(lvl);
+  const pinned = searchLiftLevelAndWeight(goalHue, goalSat, lvl, lvl, goalLightness, lvl);
+  const achievedSat = pinned.mixedHsl.s;
+  const shortfallRatio = goalSat > 0 ? achievedSat / goalSat : 1;
+  return {
+    achievedSat,
+    goalSat,
+    isShortfall: shortfallRatio < 0.7, // achieving less than ~70% of the goal's own vividness
+    mixedHex: pinned.mixed
+  };
+}
+
+// Convert a pigment hue in degrees into the app's existing red/orange/yellow/green/blue/violet
+// toneKey buckets, so the lift-planning logic can reuse the same counterToneMap as everything else.
+// Convert a lift LEVEL directly into the salon's own undertone naming: ブラウン (levels 1-6),
+// オレンジ (7-10), イエロー (11+). This replaces an earlier hue-angle-based bucketing that mapped
+// nearly the entire 1-14 range to "red" — accurate to the raw calibration hue numbers, but not
+// how undertones are actually described on the floor (a level 6 undertone reads as a brown, not
+// a red, in everyday salon language). The counterToneMap keys (red/orange/yellow/...) are kept
+// as the internal lookup key since the counter-tone recommendations themselves are still valid;
+// only the display label and which key gets used for level-based lookups changes here.
+function liftToneKeyFromLevel(level){
+  const lvl = Math.round(level);
+  if(lvl <= 5) return 'black';   // ブラック: levels 1-5
+  if(lvl <= 9) return 'red';     // ブラウン: levels 6-9 (internal key reused — see liftToneKeyLabel)
+  if(lvl <= 15) return 'orange'; // オレンジ: levels 10-15
+  return 'yellow';               // イエロー: levels 16-20
+}
+
+// Convert a pigment hue in degrees into the app's existing red/orange/yellow/green/blue/violet
+// toneKey buckets. Still used for non-lift contexts (e.g. classifying a photographed color's
+// own hue), where there's no salon level to anchor the brown/orange/yellow naming to directly.
+function hueFromDegreesToToneKey(hue, sat){
+  // Saturation gate mirrors analyzeImage's own neutral threshold: below ~0.20, a color reads as
+  // essentially gray on the salon floor, regardless of which hue band its raw angle falls into.
+  // Without this, a low-saturation goal could still get bucketed into "red" purely because its
+  // faint hue angle happens to sit in that band, and then get assigned a counter-tone (グリーン系
+  // etc.) that has no real basis — the color has no meaningful warmth to correct in the first place.
+  if(typeof sat === 'number' && sat < 0.20) return 'neutral';
+  if(hue >= 0 && hue < 25) return 'red';
+  if(hue >= 25 && hue < 50) return 'orange';
+  if(hue >= 50 && hue < 75) return 'yellow';
+  if(hue >= 75 && hue < 160) return 'green';
+  if(hue >= 160 && hue < 260) return 'blue';
+  if(hue >= 260 && hue < 320) return 'violet';
+  return 'red';
+}
+
+// Display label for a toneKey when describing what emerges from the hair during lift
+// (deliberately just the Japanese tone word, without the "系" suffix, to read naturally in
+// a sentence like "オレンジみが出てくる").
+function liftToneKeyLabel(toneKey){
+  // "red" here specifically means the level 6-10 salon undertone, which reads as brown in
+  // everyday floor language — not a literal red. Kept as "red" internally only because it shares
+  // the counterToneMap entry and green-based counter-tone recommendation with true red hues.
+  const labels = { black: 'ブラック', red: 'ブラウン', orange: 'オレンジ', yellow: 'イエロー', green: 'グリーン', blue: 'ブルー', violet: 'バイオレット' };
+  return labels[toneKey] || toneKey;
+}
+
+// Swatch color for a given lift LEVEL, used to show what the hair's own emerging undertone looks
+// like at that lift stage (independent of any product color).
+//
+// Replaced with values sampled directly from a clearer reference chart ("Hair Color Level Scale",
+// levels 5-20 photographed in good even lighting) after the previous Hair MIAM-based table read
+// too dark in practice. Levels 5-20 here are the chart's own measured pixel colors as-is. Levels
+// 1-4 aren't present on this chart, so they're extrapolated by linearly continuing the chart's
+// own early trend (fit through levels 5-9, before the curve bends upward more steeply toward the
+// lighter end) rather than guessed — keeping the dark end consistent with how this specific chart
+// actually progresses rather than a generic assumption.
+// Swatch color for a given lift LEVEL, used to show what the hair's own emerging undertone looks
+// like at that lift stage (independent of any product color).
+//
+// Calibrated against a direct salon photo comparison ("Hair Color Level Scale" chart, levels
+// 5-20). An earlier revision shifted these one level DARKER than the chart's own labeling
+// (assigning the chart's level-N+1 color to naturalLevelSwatch[N]) based on an initial reading
+// of "off by one" feedback — that direction was confirmed incorrect on follow-up. The correct
+// reading: naturalLevelSwatch[N] should use the chart's own level N-1 sample (one level LIGHTER
+// than a direct 1:1 mapping would give), e.g. naturalLevelSwatch[6] uses the chart's level-5
+// swatch, naturalLevelSwatch[9] uses the chart's level-8 swatch, and so on. This lands back on
+// the same values as the very first version of this table (levels 5-19 unchanged from the
+// original direct-mapping data), with level 20 now extrapolated from the chart's own level 19
+// instead of guessed, and levels 1-4 still extrapolated below the chart's own range using the
+// same proportional-lightness-scaling approach as before.
+const naturalLevelSwatch = {
+  1: '#030101', 2: '#040202', 3: '#040202', 4: '#040201', 5: '#0c0805',
+  6: '#332012', 7: '#422b19', 8: '#6b3f24', 9: '#8d532d', 10: '#b46837',
+  11: '#c1823d', 12: '#d09343', 13: '#e4aa49', 14: '#f0b74c', 15: '#fbca53',
+  16: '#fed957', 17: '#ffe55c', 18: '#fdf258', 19: '#fef785', 20: '#fefab1'
+};
+
+// Build a row of swatches stepping in lightness from the current level to the goal level,
+// holding the current photo's hue/saturation roughly constant — gives a visual sense of how
+// many lift stages are involved, rather than just the two endpoint colors.
+function renderGradientStrip(currentData, goalData, estimatedLift, needsDeepLift){
+  const strip = document.getElementById('gradientStrip');
+  const row = document.getElementById('gradientRow');
+
+  const lvlFrom = currentData.level;
+  // When a deep lift is needed, the gradient should show the real journey: current level up to
+  // the LIFT level (not just up to the goal's own visual level), since that's the level the hair
+  // actually passes through before the tint gets deposited back down to the goal's depth.
+  const lvlTo = needsDeepLift ? Math.round(estimatedLift) : goalData.level;
+  if(lvlFrom === lvlTo){
+    strip.style.display = 'none';
+    return;
+  }
+  strip.style.display = 'block';
+
+  // Show the REAL underlying-pigment color at each level passed through (naturalLevelSwatch),
+  // not an artificial hue-preserving interpolation between the current and goal photo colors —
+  // per direct salon feedback, the underlying pigment genuinely shifts hue family as it lifts
+  // (brown → orange → yellow), and that real shift should be visible here rather than papered
+  // over by a smooth gradient that stays anchored to the current photo's own hue throughout.
+  const step = lvlFrom <= lvlTo ? 1 : -1;
+  const lvls = [];
+  for(let lvl = lvlFrom; step > 0 ? lvl <= lvlTo : lvl >= lvlTo; lvl += step){
+    lvls.push(lvl);
+  }
+  // Cap the number of displayed steps for readability on a small screen, sampling evenly across
+  // the full range while always keeping both endpoints.
+  const maxSteps = 8;
+  let displayLvls = lvls;
+  if(lvls.length > maxSteps){
+    displayLvls = [];
+    for(let i = 0; i < maxSteps; i++){
+      const idx = Math.round(i * (lvls.length - 1) / (maxSteps - 1));
+      displayLvls.push(lvls[idx]);
+    }
+  }
+
+  let html = '';
+  displayLvls.forEach((lvl, i) => {
+    const hex = naturalLevelSwatch[Math.max(1, Math.min(20, lvl))];
+    const isEndpoint = (i === 0 || i === displayLvls.length - 1);
+    const overBleach = lvl > 14;
+    html += `<div class="gradient-step${isEndpoint ? ' endpoint':''}${overBleach ? ' bleach-zone':''}" style="background:${hex}"><span>${lvl}</span></div>`;
+  });
+  row.innerHTML = html;
+
+  // Label the strip differently when it's showing a lift-then-deposit journey vs. a simple
+  // current-to-goal gradient, and flag where bleach becomes necessary along the way. When the
+  // whole thing fits within color range (no bleach needed), phrase it as the depth the one-step
+  // mix passes through on its way to the final color — not a separate "first lift, then deposit"
+  // process, since that's not how it's actually done at the chair.
+  const labelEl = document.querySelector('#gradientStrip .palette-strip-label');
+  if(labelEl){
+    if(needsDeepLift){
+      if(lvlTo > 14){
+        labelEl.textContent = `明度の段階(現状 → ブリーチでリフト${lvlTo}相当 → カラーで沈め込み)`;
+      } else {
+        labelEl.textContent = `明度の段階(ワンメイクでレベル${lvlTo}相当を通過 → 沈め込み)`;
+      }
+    } else {
+      labelEl.textContent = '明度の段階(現状 → 希望レベル)';
+    }
+  }
+}
+
+// Build a 3-step weak/medium/strong variation of the recommended counter-tone, so the person
+// can see roughly how saturated the corrective color should look rather than just one fixed chip.
+// Show the realistic subtractive-mixing outcome: underlying pigment + counter-tone, layered as
+// pigments rather than blended as hue. The two result swatches (moderate vs. strong counter-tone)
+// make visible that (a) neither fully cancels the underlying color — both stay muddied/desaturated
+// rather than clean — and (b) the stronger counter-tone application is also visibly darker, since
+// subtractive layering reduces how much light gets through as more pigment is added.
+function renderSubtractivePreview(baseAppliedHex, baseProduct, correctiveHex, correctiveName, moderateResultHex, strongResultHex, moderateWeight, strongWeight){
+  const strip = document.getElementById('subtractiveStrip');
+  const row = document.getElementById('subtractiveRow');
+  strip.style.display = 'block';
+
+  const moderateLabel = (typeof moderateWeight === 'number')
+    ? `推奨配合(目安比 1:${moderateWeight.toFixed(1)})`
+    : '標準量';
+  const strongLabel = (typeof strongWeight === 'number')
+    ? `多めに使用(目安比 1:${strongWeight.toFixed(1)})`
+    : '多めに使用';
+  const baseLabel = baseProduct ? `${baseProduct.name}(${baseProduct.brand})` : 'ベースカラー';
+
+  row.innerHTML = `
+    <div class="subtractive-item">
+      <div class="subtractive-swatch" style="background:${baseAppliedHex}"></div>
+      <div class="subtractive-item-label"><b>${baseLabel}</b>ベース剤を乗せた地色</div>
+    </div>
+    <span class="subtractive-plus">+</span>
+    <div class="subtractive-item">
+      <div class="subtractive-swatch" style="background:${correctiveHex}"></div>
+      <div class="subtractive-item-label"><b>${correctiveName}</b>単品補色</div>
+    </div>
+    <span class="subtractive-arrow">→</span>
+    <div class="subtractive-item">
+      <div class="subtractive-swatch result" style="background:${moderateResultHex}"></div>
+      <div class="subtractive-item-label"><b>${moderateLabel}</b>暖色を少し残す</div>
+    </div>
+    <div class="subtractive-item">
+      <div class="subtractive-swatch result" style="background:${strongResultHex}"></div>
+      <div class="subtractive-item-label"><b>${strongLabel}</b>濁り減るが暗化</div>
+    </div>
+  `;
+}
+
+function hexToRgbArr(hex){
+  const clean = hex.replace('#','');
+  return [
+    parseInt(clean.substring(0,2),16),
+    parseInt(clean.substring(2,4),16),
+    parseInt(clean.substring(4,6),16)
+  ];
+}
+
+// --- Subtractive (CMY) mixing model -----------------------------------------------------
+// Counter-toning on real hair behaves like layering pigments, not like rotating a hue on a
+// color wheel. Two things follow from that which the earlier hue-only model missed entirely:
+//   1. A strong underlying pigment doesn't fully cancel even against a strong counter-tone —
+//      what's left behind is a muddied, desaturated version of the original, not a clean neutral.
+//   2. Adding more counter-tone pigment makes the result measurably DARKER, because light now has
+//      to pass through (or get absorbed by) two layers of pigment instead of one. This is why
+//      colorists see results read lower than the lift level alone would suggest once a strong
+//      ash/violet/matte corrective tone goes on.
+// Modeling this as CMY absorption layered subtractively (rather than blending hue in HSL) makes
+// both effects fall out of the same calculation instead of needing separate hand-tuned rules.
+
+function rgbToCmy(r, g, b){
+  return { c: 1 - r/255, m: 1 - g/255, y: 1 - b/255 };
+}
+
+function cmyToRgbArr(c, m, y){
+  return [
+    Math.round((1 - c) * 255),
+    Math.round((1 - m) * 255),
+    Math.round((1 - y) * 255)
+  ];
+}
+
+function cmyToHex(c, m, y){
+  return '#' + cmyToRgbArr(c, m, y).map(v => Math.max(0,Math.min(255,v)).toString(16).padStart(2,'0')).join('');
+}
+
+// Layer two pigments subtractively. weightA/weightB represent how strongly each pigment is
+// "in play" (not necessarily summing to 1) — a higher weight on the counter-tone means more of
+// it was deposited, which both neutralizes more of the underlying color AND darkens the result
+// further, since survivingA * survivingB shrinks as either weight grows.
+function subtractiveMixHex(hexA, hexB, weightA, weightB){
+  const [ra,ga,ba] = hexToRgbArr(hexA);
+  const [rb,gb,bb] = hexToRgbArr(hexB);
+  const cmyA = rgbToCmy(ra,ga,ba);
+  const cmyB = rgbToCmy(rb,gb,bb);
+  const totalWeight = weightA + weightB;
+  const wA = weightA / totalWeight;
+  const wB = weightB / totalWeight;
+  function mixChannel(a, b){
+    const survivingA = 1 - a * wA;
+    const survivingB = 1 - b * wB;
+    return 1 - (survivingA * survivingB);
+  }
+  return cmyToHex(mixChannel(cmyA.c, cmyB.c), mixChannel(cmyA.m, cmyB.m), mixChannel(cmyA.y, cmyB.y));
+}
+
+// Show 2-3 combined recipe candidates (希望色 straddle + 補色 if needed), each with both the
+// product's own color and the realistic on-hair result shown side by side. Replaces three
+// previously-separate strips (単品おすすめ / 補色バリエーション / 染料補正ミックス) with the
+// single combined answer a colorist actually wants: what to mix, and what it'll look like.
+function renderProductStrip(currentData, goalData, needsDeepLift, overBleach, estimatedLiftForProducts, underlyingHex, underlyingToneKey, forceCounter, correctiveWeight, correctiveProductOverride){
+  const dyeStrip = document.getElementById('dyeCorrectionStrip');
+  const dyeRow = document.getElementById('dyeCorrectionRow');
+  const lineLabelEl = document.getElementById('productLineLabel');
+
+  const {h: goalHue, s: goalSatForProducts} = rgbToHsl(goalData.r, goalData.g, goalData.b);
+  // When a deep lift is planned, the recipe targets the depth the hair actually passes through
+  // (estimatedLift), not the goal's own visual level — those are different depths, and scoring
+  // against the wrong one caused a visible mismatch with the "必要なアンダー" tool's own number.
+  const recipeTargetLevel = needsDeepLift ? estimatedLiftForProducts : goalData.level;
+  const effectiveUnderlyingHex = underlyingHex || currentData.hex;
+  const effectiveUnderlyingToneKey = underlyingToneKey || currentData.toneKey;
+
+  const recipes = buildRecipeCandidates(
+    activeColorLine, goalHue, goalSatForProducts, recipeTargetLevel,
+    effectiveUnderlyingHex, effectiveUnderlyingToneKey, 4, forceCounter, correctiveWeight, correctiveProductOverride
+  );
+
+  if(lineLabelEl){
+    lineLabelEl.textContent = activeColorLine === 'cross'
+      ? 'クオルシア + フィヨーレ BLカラー'
+      : colorLines[activeColorLine].label;
+  }
+
+  if(recipes.length === 0){
+    dyeStrip.style.display = 'none';
+    return;
+  }
+  dyeStrip.style.display = 'block';
+
+  let html = '';
+  recipes.forEach((r, i) => {
+    const crossTag = r.crossBrand ? `<span class="brand-tag cross">メーカー違い</span>` : '';
+    const counterTag = r.counterUsed ? `<span class="brand-tag">補色配合</span>` : '';
+    const subText = `仕上がりレベル目安 ${Math.round(r.resultLevel)}`;
+    html += `
+      <div class="product-card">
+        <div class="swatch-pair">
+          <div class="swatch-pair-labels"><span>剤</span><span>仕上がり</span></div>
+          <div class="swatch-pair-row">
+            <div class="product-swatch" style="background:${r.productHex}" title="カラー剤そのものの色"></div>
+            <div class="product-swatch result" style="background:${r.resultHex}" title="この地肌に乗せた仕上がり予測"></div>
+          </div>
+        </div>
+        <div class="product-info">
+          ${i === 0 ? '<span class="product-best-tag">最も近い候補</span><br>' : ''}
+          <b>${r.label}</b>${crossTag}${counterTag}${subText}
+        </div>
+      </div>`;
+  });
+  dyeRow.innerHTML = html;
+}
+
+
+document.getElementById('analyzeBtn').addEventListener('click', () => {
+  renderResults();
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function renderResults(){
+  document.getElementById('curLevel').textContent = `Lv. ${currentData.level}`;
+  document.getElementById('curTone').textContent = currentData.toneLabel;
+  document.getElementById('curHex').textContent = currentData.hex;
+
+  document.getElementById('goalLevel').textContent = `Lv. ${goalData.level}`;
+  document.getElementById('goalTone').textContent = goalData.toneLabel;
+  document.getElementById('goalHex').textContent = goalData.hex;
+
+  // position pins on 1-10 scale (track width effectively 0-100%)
+  const pct = (lvl) => `${((lvl-1)/17)*100}%`;
+  document.getElementById('tickCurrent').style.left = pct(currentData.level);
+  document.getElementById('tickGoal').style.left = pct(goalData.level);
+
+  const levelGap = goalData.level - currentData.level;
+  const gapLineEl = document.getElementById('gapLine');
+  if(levelGap > 0){
+    gapLineEl.innerHTML = `現状より <b>${levelGap}レベル</b> 明るくする必要があります(リフトアップ)`;
+  } else if(levelGap < 0){
+    gapLineEl.innerHTML = `現状より <b>${Math.abs(levelGap)}レベル</b> 暗くする必要があります(ダウントーン)`;
+  } else {
+    gapLineEl.innerHTML = `明度(レベル)はほぼ同じです。色相の調整が中心になります`;
+  }
+
+  const verdictTitle = document.getElementById('verdictTitle');
+  const verdictBody = document.getElementById('verdictBody');
+  const stepList = document.getElementById('stepList');
+  stepList.innerHTML = '';
+
+  // --- Lift planning ---------------------------------------------------------------------
+  // Estimate how far the hair actually needs to be lifted to support the goal color, which can
+  // be higher than the goal's own visual level for cool/saturated goals (the underlying warm
+  // pigment needs to be thinned out before a cool tint can show through and hold).
+  //
+  // searchLiftLevelAndWeight jointly searches (level, corrective-pigment strength) for the pair
+  // whose subtractive mix lands closest to the goal color — see its own comment for why level-only
+  // search (matching the goal color's own hue via a tint that IS the goal color) understated the
+  // lift colorists actually use for muted/warm goals like beige. The corrective pigment itself
+  // (ash/violet/green/etc.) is chosen from the GOAL's own hue via correctiveSwatchForGoal, not
+  // from whatever tone the current photo happens to show — this is the shade a colorist would
+  // actually reach for to move toward that goal, consistent across warm/cool/neutral goals alike.
+  const {h: goalHueRaw, s: goalSatRaw, l: goalLightnessRaw} = rgbToHsl(goalData.r, goalData.g, goalData.b);
+  const liftSearch = searchLiftLevelAndWeight(goalHueRaw, goalSatRaw, goalData.level, currentData.level, goalLightnessRaw);
+  const estimatedLift = liftSearch.lvl;
+  const needsDeepLift = estimatedLift > goalData.level + 0.5; // any meaningful gap past the goal's own level
+  // Threshold lowered from 1.5 to 0.5: a 1-level gap (e.g. goal level 9, estimated lift 10) was
+  // previously falling through to the "simple level-gap" branch below, which then computed the
+  // gradient/product recommendations off the GOAL level instead of the actual lift target —
+  // producing a visible mismatch where the "必要なアンダー" tool correctly showed lift 10, but
+  // the main flow's gradient/product strips were built around level 9. Any gap at all between
+  // the lift target and the goal's own level should route through the lift-aware branch so both
+  // displays stay consistent with the same estimatedLift value.
+  lastNeedsDeepLift = needsDeepLift;
+  lastEstimatedLift = estimatedLift;
+  // Honest check: even once the lift level matches the goal's hue family, does it realistically
+  // reach the goal's own vividness? If not, say so plainly rather than implying more lift would help.
+  const saturationCheck = checkSaturationShortfall(estimatedLift, goalHueRaw, goalSatRaw, goalLightnessRaw);
+  // counterToneKey: which corrective pigment is actually being used (ash/violet/green/etc.) —
+  // for a neutral goal this comes from the underlying pigment's own warmth at the chosen lift
+  // level (liftSearch.correctiveToneKey), not from the goal's own hue (which has none worth
+  // chasing at low saturation).
+  const counterToneKey = liftSearch.correctiveToneKey;
+  const liftCounter = counterToneMap[counterToneKey] || counterToneMap.orange;
+  // underlyingLiftToneKey: purely descriptive — what color family the underlying pigment itself
+  // reads as at this lift level (ブラウン/オレンジ/イエロー by level band), used only for the
+  // "地毛から○○みが出てくる" sentences. Distinct from counterToneKey: the corrective pigment
+  // chosen to address that warmth isn't always literally "what counters this level band" once a
+  // neutral goal's own underlying-hue-based correction is in play, so keep these separate rather
+  // than reusing one key for both purposes.
+  const underlyingLiftToneKey = liftToneKeyFromLevel(estimatedLift);
+
+  // The "lift" counter (based on the goal's own hue — the single-pigment corrective shade a
+  // colorist would actually deposit) applies whenever a lift-up is happening at all (levelGap>=1
+  // or needsDeepLift), since in every such case the question is "what single pigment do I add to
+  // reach this goal color over the (possibly newly-lifted) underlying pigment" — not "what cancels
+  // today's color". The "current" counter (based on what's visibly there today) only applies for
+  // downtone/retone cases where no lift is happening and the existing color is what needs taming.
+  const needsLiftUp = needsDeepLift || levelGap >= 1;
+  const counter = needsLiftUp ? liftCounter : counterToneMap[currentData.toneKey];
+  // displayName: the concrete product to show/say, per direct salon feedback that corrective
+  // choices should be named as an actual chart product (e.g. "6G", "8YM") rather than only a
+  // hue-family label like "グリーン系" — falls back to the hand-picked counterToneMap name when
+  // no real product was used (e.g. downtone/retone path, or a goal with no real chart option).
+  const counterDisplayName = (needsLiftUp && liftSearch.correctiveProductName)
+    ? `${liftSearch.correctiveProductName}(${liftSearch.correctiveProductBrand})`
+    : counter.name;
+  const goalSwatch = goalData.hex;
+
+  // Build the "current -> counter-tone -> goal" visual swatch strip
+  const paletteRow = document.getElementById('paletteRow');
+  const needsCounter = needsLiftUp && !counter.noCounterNeeded;
+  let paletteHtml = `
+    <div class="palette-item">
+      <div class="palette-swatch" style="background:${currentData.hex}"></div>
+      <div class="palette-item-label"><b>現状</b>${currentData.toneLabel}</div>
+    </div>
+  `;
+  if(needsCounter){
+    const counterStepLabel = needsLiftUp ? '使用する単品薬剤' : '補色';
+    const counterStepSwatch = (needsLiftUp && liftSearch.correctiveHex) ? liftSearch.correctiveHex : counter.swatch;
+    paletteHtml += `<div class="palette-arrow">→</div>
+    <div class="palette-item">
+      <div class="palette-swatch" style="background:${counterStepSwatch}"></div>
+      <div class="palette-item-label"><b>${counterStepLabel}</b>${counterDisplayName}</div>
+    </div>`;
+  }
+  paletteHtml += `<div class="palette-arrow">→</div>
+    <div class="palette-item">
+      <div class="palette-swatch target" style="background:${goalSwatch}"></div>
+      <div class="palette-item-label"><b>仕上がり目標</b>${goalData.toneLabel}</div>
+    </div>`;
+  paletteRow.innerHTML = paletteHtml;
+
+  renderGradientStrip(currentData, goalData, estimatedLift, needsDeepLift);
+  const overBleachForProducts = Math.round(estimatedLift) > 14;
+
+  // The recipe strip needs the underlying pigment color/tone at whichever depth is actually
+  // relevant: the lift level's own pigment when a deep lift is planned, or simply the current
+  // photo's own color when it's a normal same-depth or modest lift-up case.
+  const underlyingHexForProducts = needsDeepLift
+    ? naturalLevelSwatch[Math.round(estimatedLift)]
+    : currentData.hex;
+  const underlyingToneKeyForProducts = needsDeepLift ? counterToneKey : currentData.toneKey;
+  const correctiveProductOverride = (needsLiftUp && liftSearch.correctiveProductName)
+    ? { hex: liftSearch.correctiveHex, name: liftSearch.correctiveProductName, brand: liftSearch.correctiveProductBrand }
+    : null;
+  renderProductStrip(currentData, goalData, needsDeepLift, overBleachForProducts, estimatedLift, underlyingHexForProducts, underlyingToneKeyForProducts, needsCounter, liftSearch.w, correctiveProductOverride);
+
+  if(needsDeepLift){
+    // Cool/saturated goal that needs lifting well past its own visual level — the core insight
+    // being modeled here: a level-6 strong cool tone often isn't made by depositing a level-6
+    // cool color directly. The lift level represents how much underlying warmth has to be
+    // cleared for the cool tint to actually hold and show true — NOT a separate first step.
+    //
+    // In real salon work this almost always happens as a ONE-STEP process (ワンメイク): a single
+    // color/developer mix lifts the hair AND deposits the tint simultaneously, landing at the
+    // goal's depth in one application — not "lift to level 14, then do a second process to tone
+    // down to level 6." Bleach is the one real exception, since that genuinely is a separate,
+    // sequential step before color goes on. So the wording below describes a one-step mix when
+    // within color range, and only switches to sequential "first / then" phrasing when bleach is
+    // actually required.
+    const liftRounded = Math.round(estimatedLift);
+    const overBleachThreshold = liftRounded > 14;
+    lastOverBleach = overBleachThreshold;
+    const liftMethodLabel = overBleachThreshold ? 'ブリーチ' : 'ハイリフトカラー';
+    const liftMethodNote = overBleachThreshold
+      ? `カラー剤単体のリフト限度(目安レベル14)を超えるため、<strong>ブリーチ</strong>での脱色を検討してください。`
+      : `カラー剤(ハイリフトタイプ)のリフト限度内(目安レベル14まで)に収まる範囲なので、<strong>ワンメイク(1剤でのリフト+ティント同時進行)</strong>で組める設計です。`;
+
+    // Honest disclosure when the achievable result won't reach the goal photo's own vividness —
+    // this is a real limitation of counter-toning, not something more lift would fix, so it's
+    // stated plainly rather than implied away.
+    const saturationNote = saturationCheck.isShortfall
+      ? `なお、写真の彩度ほど鮮やかには出にくく、<strong>やや落ち着いた(濁りを含んだ)発色</strong>になる見込みです。色相の方向性は再現できますが、写真そのままの鮮やかさは毛髪の発色限界を超えている可能性があります。`
+      : '';
+
+    // Subtractive mixing using the SAME (level, weight) pair and SAME base/corrective products
+    // the joint search actually found as the best match to the goal — rather than re-deriving a
+    // separate fixed-ratio mix here, which could disagree with what searchLiftLevelAndWeight
+    // already determined fits best. moderateResult is that actual best-fit result; strongResult
+    // shows a heavier application of the same corrective pigment for comparison, so the person
+    // can see how much further darkening/desaturation a stronger dose would cause versus the
+    // recommended strength.
+    const underSwatchHex = naturalLevelSwatch[liftRounded];
+    const baseAppliedHexForPreview = liftSearch.baseAppliedHex || underSwatchHex;
+    const correctiveHexForPreview = liftSearch.correctiveHex || counter.swatch;
+    const moderateResult = liftSearch.mixed;
+    const strongResult = subtractiveMixHex(baseAppliedHexForPreview, correctiveHexForPreview, 1.0, liftSearch.w + 1.0);
+
+    const correctiveLineForGoal = counter.noCounterNeeded
+      ? `${counter.detailAsGoal || counter.name}`
+      : `希望色「${goalData.toneLabel}」を作るには<strong>${counterDisplayName}</strong>の単品薬剤を使います。<strong>実際には地毛の暖色を完全に中和するのではなく、少し残した状態で発色させる設計で、補色を強めるほど明度も下がります</strong>(下の「現実的な仕上がり予測」を参照)。`;
+    const correctiveLineForGoalOneStep = counter.noCounterNeeded
+      ? `${counter.detailAsGoal || counter.name}`
+      : `希望色「${goalData.toneLabel}」を作るには<strong>${counterDisplayName}</strong>の単品薬剤を配合します。<strong>実際には地毛の暖色を完全に中和するのではなく、少し残した状態で発色させる設計で、補色を強めるほど明度も下がります</strong>(下の「現実的な仕上がり予測」を参照)。`;
+    const correctiveStepForGoal = counter.noCounterNeeded ? counter.detailAsGoal || counter.name : counter.detailAsGoal;
+
+    if(overBleachThreshold){
+      // Genuine two-step process: bleach first, color second. Sequential "first/then" wording
+      // is accurate here since these really are separate applications.
+      verdictTitle.textContent = `リフト${liftRounded}相当 → 沈め込みで仕上げ(ブリーチ要)`;
+      verdictBody.innerHTML = `見た目の希望レベルは${goalData.level}ですが、この色味をきれいに出すには、地毛のアンダーを薄くするために<strong>レベル${liftRounded}相当までブリーチ</strong>してから、別工程で希望色のティントを希望レベルまで沈め込む2浴の設計が必要です。${liftMethodNote}レベル${liftRounded}付近では地毛から<span class="tone-tag" style="background:${underSwatchHex}">${liftToneKeyLabel(underlyingLiftToneKey)}み</span>が出てきますが、${correctiveLineForGoal}${saturationNote}`;
+      stepList.innerHTML = `
+        <li><span class="step-num">01</span><span>カウンセリングで履歴・ダメージレベルを確認し、レベル${liftRounded}付近までのブリーチの可否を見立てる</span></li>
+        <li><span class="step-num">02</span><span>ブリーチでレベル${liftRounded}相当までリフトする(${liftToneKeyLabel(underlyingLiftToneKey)}みが出てくる想定)</span></li>
+        <li><span class="step-num">03</span><span>${correctiveStepForGoal}毛束で発色具合を確認しながら配合の強さを調整してください。</span></li>
+        <li><span class="step-num">04</span><span>希望色「${goalData.toneLabel}」の濃いティントをオンし、レベル${goalData.level}まで沈め込む</span></li>
+      `;
+    } else {
+      // One-step (ワンメイク) process: lift, neutralize, and deposit all happen together within
+      // a single color/developer mix. The "lift level" is the depth the mix has to clear through
+      // on its way to depositing at the goal's final depth — described as concurrent phases of
+      // one application, not as sequential steps the colorist performs one after another.
+      verdictTitle.textContent = `ワンメイクで設計(リフト${liftRounded}相当を通過 → 沈め込み)`;
+      verdictBody.innerHTML = `見た目の希望レベルは${goalData.level}ですが、この色味をきれいに出すには、配合するカラー剤が地毛のアンダーを<strong>レベル${liftRounded}相当まで薄くしながら、同時に希望色のティントを希望レベルまで沈め込む</strong>、ワンメイクでの設計になります。${liftMethodNote}リフトが進む過程でレベル${liftRounded}付近の<span class="tone-tag" style="background:${underSwatchHex}">${liftToneKeyLabel(underlyingLiftToneKey)}み</span>が一時的に出ますが、${correctiveLineForGoalOneStep}${saturationNote}`;
+      stepList.innerHTML = `
+        <li><span class="step-num">01</span><span>カウンセリングで履歴・ダメージレベルを確認し、ワンメイクでレベル${liftRounded}付近まで届くか見立てる</span></li>
+        <li><span class="step-num">02</span><span>地毛から出る${liftToneKeyLabel(underlyingLiftToneKey)}みの上に、希望色「${goalData.toneLabel}」のティントを同じ剤に配合する</span></li>
+        <li><span class="step-num">03</span><span>${correctiveStepForGoal}毛束で発色具合を確認しながら配合比を調整してください。</span></li>
+        <li><span class="step-num">04</span><span>1回の施術でレベル${liftRounded}相当まで薄め通しつつ、レベル${goalData.level}の仕上がりに沈め込む</span></li>
+      `;
+    }
+
+    if(!counter.noCounterNeeded){
+      renderSubtractivePreview(baseAppliedHexForPreview, liftSearch.baseProduct, correctiveHexForPreview, counterDisplayName, moderateResult, strongResult, liftSearch.w, liftSearch.w + 1.0);
+    } else {
+      document.getElementById('subtractiveStrip').style.display = 'none';
+    }
+  } else if(levelGap >= 1){
+    // Same lift-target logic as the needsDeepLift branch above, just for cases where the lift
+    // target happens to land close to the goal's own level. The bleach/ワンメイク split is
+    // decided purely by whether estimatedLift exceeds the color-only lift ceiling (~14) — NOT
+    // by levelGap (the simple current→goal level difference). A big levelGap with a modest
+    // estimatedLift (e.g. very dark current hair, but the goal only calls for lifting to level
+    // 12) should still be a single ワンメイク application, never pre-bleach/highlights, per
+    // direct salon feedback: up to roughly level 13-14 of underlying lift, everything happens
+    // in one sitting with one mix.
+    const liftRoundedSimple = Math.round(estimatedLift);
+    const overBleachSimple = liftRoundedSimple > 14;
+    lastOverBleach = overBleachSimple;
+    if(overBleachSimple){
+      verdictTitle.textContent = `リフト${liftRoundedSimple}相当 → 沈め込みで仕上げ(ブリーチ要)`;
+      verdictBody.innerHTML = `現状レベル${currentData.level}から希望レベル${goalData.level}まで上げるには、地毛のアンダーを<strong>レベル${liftRoundedSimple}相当までブリーチ</strong>してから、別工程で希望色のティントを希望レベルまで沈め込む2浴の設計が必要です。カラー剤単体のリフト限度(目安レベル14)を超えるため、ブリーチでの脱色を検討してください。脱色を進めると地毛由来の<span class="tone-tag" style="background:${currentData.toneColor}">${currentData.toneLabel.replace('系','')}みの残留色素</span>が出やすいため、希望色「${goalData.toneLabel}」を作るには<strong>${counterDisplayName}</strong>の単品薬剤で仕上げます。`;
+      stepList.innerHTML = `
+        <li><span class="step-num">01</span><span>カウンセリングで既存のカラー履歴・ダメージレベルを確認し、ブリーチ回数の見込みを立てる</span></li>
+        <li><span class="step-num">02</span><span>ブリーチでレベル${liftRoundedSimple}付近まで明度を上げる(毛束で確認しながら段階的に)</span></li>
+        <li><span class="step-num">03</span><span>${counter.detailAsGoal}</span></li>
+        <li><span class="step-num">04</span><span>希望色「${goalData.toneLabel}」に近づけるカラー剤を仕上げに乗せ、トーンを微調整する</span></li>
+      `;
+    } else {
+      verdictTitle.textContent = 'ワンメイクでリフトアップ + 色味調整';
+      verdictBody.innerHTML = `現状レベル${currentData.level}から希望レベル${goalData.level}への明度アップが必要ですが、必要なアンダーレベルは${liftRoundedSimple}相当で、カラー剤(ハイリフトタイプ)のリフト限度内(目安レベル14まで)に収まります。<strong>事前のハイライトやブリーチは不要</strong>で、<strong>ワンメイク(1剤でのリフト+ティント同時進行)</strong>で組める設計です。地毛の<span class="tone-tag" style="background:${currentData.toneColor}">${currentData.toneLabel.replace('系','')}み</span>の上に、希望色「${goalData.toneLabel}」を作るための<strong>${counterDisplayName}</strong>の単品薬剤を配合します。`;
+      stepList.innerHTML = `
+        <li><span class="step-num">01</span><span>カウンセリングで履歴・ダメージレベルを確認し、ワンメイクでレベル${liftRoundedSimple}付近まで届くか見立てる</span></li>
+        <li><span class="step-num">02</span><span>${counter.detailAsGoal}</span></li>
+        <li><span class="step-num">03</span><span>1回の施術でレベル${liftRoundedSimple}相当まで薄め通しつつ、希望色「${goalData.toneLabel}」をレベル${goalData.level}の仕上がりに沈め込む</span></li>
+      `;
+    }
+  } else if(levelGap <= -1){
+    verdictTitle.textContent = 'ダウントーン — 色味の選定が中心';
+    verdictBody.innerHTML = `明度を下げる方向なので脱色は不要です。希望色「${goalData.toneLabel}」の色素をそのまま乗せれば狙った明度・色味に近づけやすい状態です。現状の<span class="tone-tag" style="background:${currentData.toneColor}">${currentData.toneLabel.replace('系','')}み</span>が強く残っている場合は先に軽くリセットすると色の濁りを防げます。`;
+    stepList.innerHTML = `
+      <li><span class="step-num">01</span><span>必要であれば既存のカラー残留(濁り)をリセットするカラー剤を選定する</span></li>
+      <li><span class="step-num">02</span><span>希望色「${goalData.toneLabel}」のカラー剤を選び、レベル${goalData.level}に合わせて調合する</span></li>
+      <li><span class="step-num">03</span><span>仕上がりの色味が濁らないよう、必要に応じて${counter.name}を少量ブレンドする</span></li>
+    `;
+  } else {
+    verdictTitle.textContent = '明度は近い — 色相の置き換えのみ';
+    verdictBody.innerHTML = `レベルはほぼ変わらないため脱色の必要性は低めです。現状の<span class="tone-tag" style="background:${currentData.toneColor}">${currentData.toneLabel.replace('系','')}み</span>から希望の「${goalData.toneLabel}」へ色相を置き換える設計になります。`;
+    stepList.innerHTML = `
+      <li><span class="step-num">01</span><span>現状の色味を軽くリセットしてから、希望色のベースを作る</span></li>
+      <li><span class="step-num">02</span><span>希望色「${goalData.toneLabel}」のカラー剤を同レベルで調合する</span></li>
+      <li><span class="step-num">03</span><span>必要であれば${counter.name}を少量加え、色の濁りを防ぐ</span></li>
+    `;
+  }
+}
+
+setupSlot('zoneCurrent', 'fileCurrent', 'readoutCurrent', 'current');
+setupSlot('zoneGoal', 'fileGoal', 'readoutGoal', 'goal');
+
+// Standalone "find the needed undertone" tool: a single photo in, an estimated lift level and
+// the undertone that would emerge at that level out. Reuses the same lift-planning logic as the
+// main flow (searchLiftLevelAndWeight) so the two stay consistent with each other
+// even though this entry point doesn't go through the current/goal two-photo comparison.
+selectionCompleteCallbacks['underTarget'] = function(analysis){
+  renderUnderFinderResult(analysis);
+};
+setupSlot('zoneUnderTarget', 'fileUnderTarget', 'readoutUnderTarget', 'underTarget');
+
+function renderUnderFinderResult(targetData){
+  const resultBlock = document.getElementById('underFinderResult');
+  const titleEl = document.getElementById('underVerdictTitle');
+  const bodyEl = document.getElementById('underVerdictBody');
+  const paletteRow = document.getElementById('underPaletteRow');
+
+  const {h: targetHue, s: targetSat, l: targetLightness} = rgbToHsl(targetData.r, targetData.g, targetData.b);
+  // No "current level" context exists in this standalone tool, so use the target's own level as
+  // the floor — searchLiftLevelAndWeight already treats currentLevel as a lower bound, so this is
+  // a reasonable stand-in when there's no actual starting photo to anchor to.
+  const liftResult = searchLiftLevelAndWeight(targetHue, targetSat, targetData.level, targetData.level, targetLightness);
+  const lift = liftResult.lvl;
+  const liftRounded = Math.round(lift);
+  const toneKey = liftToneKeyFromLevel(lift);
+  const toneLabel = liftToneKeyLabel(toneKey);
+  // 地毛アンダーそのもの(補色をまだ乗せていない地色) — the only swatch this simplified tool shows.
+  const pigSwatch = naturalLevelSwatch[liftRounded];
+  const overBleachThreshold = liftRounded > 14;
+  const methodLabel = overBleachThreshold ? 'ブリーチ' : 'ハイリフトカラー';
+
+  // Per direct salon feedback, this standalone tool stays focused purely on "what underlying
+  // level is needed" — no mention of corrective pigments, base products, or a finished-result
+  // swatch (those live in the main current/goal comparison flow instead). Keeping the
+  // saturation-shortfall caveat, since it's still about what the underlying lift can/can't
+  // achieve on its own, not about any corrective recipe.
+  const saturationCheck = checkSaturationShortfall(lift, targetHue, targetSat, targetLightness);
+  const saturationNote = saturationCheck.isShortfall
+    ? `なお、写真の彩度ほど鮮やかには出にくく、やや落ち着いた(濁りを含んだ)発色になる見込みです。色相の方向性は再現できますが、写真そのままの鮮やかさは毛髪の発色限界を超えている可能性があります。`
+    : '';
+
+  resultBlock.style.display = 'block';
+  titleEl.textContent = `推定リフトレベル ${liftRounded}相当${overBleachThreshold ? '(ブリーチ要)' : ''}`;
+  bodyEl.innerHTML = `この目的色(${targetData.toneLabel}・見た目レベル${targetData.level})を実現するには、地毛のアンダーを<strong>レベル${liftRounded}相当</strong>まで削っておく必要がある見立てです。そのレベルでは地毛から<span class="tone-tag" style="background:${pigSwatch}">${toneLabel}み</span>が出てくる想定です。${overBleachThreshold
+    ? 'カラー剤単体のリフト限度(目安レベル14)を超えるため、ブリーチでの脱色が前提になります。'
+    : `${methodLabel}のリフト限度内(目安レベル14まで)に収まる範囲です。`}${saturationNote}`;
+
+  paletteRow.innerHTML = `
+    <div class="palette-item">
+      <div class="palette-swatch target" style="background:${targetData.hex}"></div>
+      <div class="palette-item-label"><b>目的色</b>${targetData.toneLabel}</div>
+    </div>
+    <div class="palette-arrow">→</div>
+    <div class="palette-item">
+      <div class="palette-swatch" style="background:${pigSwatch}"></div>
+      <div class="palette-item-label"><b>必要なアンダー</b>レベル${liftRounded}相当の${toneLabel}み</div>
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>
