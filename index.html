@@ -1680,6 +1680,51 @@ function toneCorrectionSuffixOf(entry){
   return null;
 }
 
+// --- Accent-color tones: the OPPOSITE use case from tone-correction tones above -------------
+// Per direct salon feedback: when the goal itself is a vivid, saturated hue (red/violet/orange
+// etc. — NOT a muted or neutral goal), the right move isn't to cancel anything — it's to deposit
+// an actual chart shade that reads as that hue family, layered onto a lightened base. These are
+// the closest things to real "accent" pigments on this chart (RV=red-violet, P=pink, O=orange,
+// C=copper, R=red, Y=yellow), available at levels 6-10 only. Kept as a separate category from
+// TONE_CORRECTION_BL_SUFFIXES (which exists to CANCEL warmth, not to BUILD a vivid hue) since
+// mixing the two purposes into one list would make a single suffix do double, contradictory duty.
+const ACCENT_COLOR_BL_SUFFIXES = ['RV', 'P', 'O', 'C', 'R', 'Y'];
+
+function isAccentColorEntry(entry){
+  if(entry.brandKey !== 'bl') return false;
+  const sortedSuffixes = [...ACCENT_COLOR_BL_SUFFIXES].sort((a,b) => b.length - a.length);
+  for(const suf of sortedSuffixes){
+    if(entry.name.endsWith(suf)){
+      const prefix = entry.name.slice(0, entry.name.length - suf.length);
+      if(/^\d+$/.test(prefix)) return true;
+    }
+  }
+  return false;
+}
+
+// Find the closest-by-hue accent tone for a given goal hue, near the given level. Unlike
+// correctiveSwatchForUnderlying (which picks by level-band direction), this picks purely by hue
+// match against the goal itself, since the whole point is to deposit a real pigment that reads
+// as that specific vivid hue — not to counter anything.
+function findAccentColorForGoal(goalHue, nearLevel){
+  const palette = buildCrossBrandPalette();
+  const candidates = palette.filter(isAccentColorEntry);
+  if(candidates.length === 0) return null;
+  let best = null, bestScore = Infinity;
+  for(const entry of candidates){
+    const [er,eg,eb] = hexToRgbArr(entry.hex);
+    const entryHue = rgbToHsl(er,eg,eb).h;
+    let hueDist = Math.abs(entryHue - goalHue);
+    if(hueDist > 180) hueDist = 360 - hueDist;
+    const levelDist = (typeof nearLevel === 'number') ? Math.abs(entry.level - nearLevel) : 0;
+    // Hue match is the primary criterion (this entry needs to actually READ as the goal's hue);
+    // level proximity is a secondary tie-breaker among similarly-good hue matches.
+    const score = hueDist * 3 + levelDist;
+    if(score < bestScore){ bestScore = score; best = entry; }
+  }
+  return best;
+}
+
 // Build the full cross-brand palette once, tagged with brand/brandKey, for reuse by the neutral
 // base+correction search below (mirrors the inline cross-brand assembly used elsewhere).
 function buildCrossBrandPalette(){
@@ -2102,7 +2147,7 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
       needsCounter = !counter.noCounterNeeded && underGoalGap > 40;
     }
 
-    let finalHex = baseHex, finalLabel = baseLabel, counterUsed = false, correctivePercentUsed = 0;
+    let finalHex = baseHex, finalLabel = baseLabel, counterUsed = false, correctivePercentUsed = 0, accentUsed = false;
     if(needsCounter){
       // 補色 share now comes from the actual (level, weight) pair searchLiftLevelAndWeight found
       // as the best match for this goal — not a fixed 2/10 — so the displayed recipe agrees with
@@ -2122,6 +2167,23 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
       finalLabel = `${baseLabel} + ${correctiveLabel} ${correctiveSharePercent}%`;
       counterUsed = true;
       correctivePercentUsed = correctiveSharePercent;
+    } else if(targetSat >= 0.45){
+      // No corrective needed (the goal's own vivid hue already aligns with the lifted underlying
+      // pigment — see renderResults' goalIsVividEnoughForAccent), but per direct salon feedback the
+      // straddle-blended base alone still reads too washed-out/pale to actually look like the
+      // vivid goal hue — a real chart shade needs to be deposited to carry that vividness, not
+      // just relied upon to emerge from canceling/blending alone. Pick the closest-by-hue ACCENT
+      // tone (RV/P/O/C/R/Y — see findAccentColorForGoal) and add it as a minority share, the same
+      // way a corrective tone is added, but here to BUILD the hue rather than cancel anything.
+      const accentEntry = findAccentColorForGoal(targetHue, targetLevel);
+      if(accentEntry){
+        const ACCENT_SHARE_PERCENT = 25; // a moderate minority dose — enough to carry real chroma
+        // without overwhelming the level-matching straddle blend underneath it.
+        finalHex = blendHex(baseHex, accentEntry.hex, 100 - ACCENT_SHARE_PERCENT, ACCENT_SHARE_PERCENT);
+        finalLabel = `${baseLabel} + ${labelFor(accentEntry)} ${ACCENT_SHARE_PERCENT}%`;
+        accentUsed = true;
+        correctivePercentUsed = ACCENT_SHARE_PERCENT;
+      }
     }
 
     // Realistic on-hair result: layer the assembled tint subtractively over the actual
@@ -2139,6 +2201,7 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
       label: finalLabel,
       crossBrand,
       counterUsed,
+      accentUsed,
       correctivePercentUsed,
       score
     });
@@ -2644,7 +2707,7 @@ function renderGradientStrip(currentData, goalData, estimatedLift, needsDeepLift
 // make visible that (a) neither fully cancels the underlying color — both stay muddied/desaturated
 // rather than clean — and (b) the stronger counter-tone application is also visibly darker, since
 // subtractive layering reduces how much light gets through as more pigment is added.
-function renderSubtractivePreview(baseAppliedHex, baseProduct, correctiveHex, correctiveName, moderateResultHex, strongResultHex, moderateWeight, strongWeight){
+function renderSubtractivePreview(baseAppliedHex, baseProduct, correctiveHex, correctiveName, moderateResultHex, strongResultHex, moderateWeight, strongWeight, isAccent){
   const strip = document.getElementById('subtractiveStrip');
   const row = document.getElementById('subtractiveRow');
   strip.style.display = 'block';
@@ -2656,6 +2719,8 @@ function renderSubtractivePreview(baseAppliedHex, baseProduct, correctiveHex, co
     ? `多めに使用(目安比 1:${strongWeight.toFixed(1)})`
     : '多めに使用';
   const baseLabel = baseProduct ? `${baseProduct.name}(${baseProduct.brand})` : 'ベースカラー';
+  const correctiveStepLabel = isAccent ? '単品アクセントカラー' : '単品補色';
+  const moderateDescription = isAccent ? '希望の色味を乗せる' : '暖色を少し残す';
 
   row.innerHTML = `
     <div class="subtractive-item">
@@ -2665,12 +2730,12 @@ function renderSubtractivePreview(baseAppliedHex, baseProduct, correctiveHex, co
     <span class="subtractive-plus">+</span>
     <div class="subtractive-item">
       <div class="subtractive-swatch" style="background:${correctiveHex}"></div>
-      <div class="subtractive-item-label"><b>${correctiveName}</b>単品補色</div>
+      <div class="subtractive-item-label"><b>${correctiveName}</b>${correctiveStepLabel}</div>
     </div>
     <span class="subtractive-arrow">→</span>
     <div class="subtractive-item">
       <div class="subtractive-swatch result" style="background:${moderateResultHex}"></div>
-      <div class="subtractive-item-label"><b>${moderateLabel}</b>暖色を少し残す</div>
+      <div class="subtractive-item-label"><b>${moderateLabel}</b>${moderateDescription}</div>
     </div>
     <div class="subtractive-item">
       <div class="subtractive-swatch result" style="background:${strongResultHex}"></div>
@@ -2774,6 +2839,7 @@ function renderProductStrip(currentData, goalData, needsDeepLift, overBleach, es
   recipes.forEach((r, i) => {
     const crossTag = r.crossBrand ? `<span class="brand-tag cross">メーカー違い</span>` : '';
     const counterTag = r.counterUsed ? `<span class="brand-tag">補色配合</span>` : '';
+    const accentTag = r.accentUsed ? `<span class="brand-tag">アクセントカラー配合</span>` : '';
     const subText = `仕上がりレベル目安 ${Math.round(r.resultLevel)}`;
     html += `
       <div class="product-card">
@@ -2786,7 +2852,7 @@ function renderProductStrip(currentData, goalData, needsDeepLift, overBleach, es
         </div>
         <div class="product-info">
           ${i === 0 ? '<span class="product-best-tag">最も近い候補</span><br>' : ''}
-          <b>${r.label}</b>${crossTag}${counterTag}${subText}
+          <b>${r.label}</b>${crossTag}${counterTag}${accentTag}${subText}
         </div>
       </div>`;
   });
@@ -2890,25 +2956,17 @@ function renderResults(){
 
   // Build the "current -> counter-tone -> goal" visual swatch strip
   const paletteRow = document.getElementById('paletteRow');
-  // When the goal hue and the underlying lifted pigment's own hue point the SAME direction (both
-  // warm, roughly aligned) AND the goal is vividly saturated, no corrective pigment is needed at
-  // all — per direct salon feedback, a vivid warm goal is already what the lifted underlying
-  // pigment naturally reads as, so mixing in a corrective shade only pulls the result AWAY from
-  // the goal rather than toward it (this only showed up as a problem once the goal's own
-  // saturation was high enough that the underlying warmth alone was already close to target;
-  // muted/low-saturation warm goals still benefit from a small corrective dose to clean up
-  // residual muddiness, so this skip is intentionally scoped to the high-saturation case only).
-  const liftedUnderlyingHex = naturalLevelSwatch[Math.max(1, Math.min(20, Math.round(estimatedLift)))];
-  const [lur, lug, lub] = hexToRgbArr(liftedUnderlyingHex);
-  const liftedUnderlyingHue = rgbToHsl(lur, lug, lub).h;
-  let goalUnderlyingHueGap = Math.abs(goalHueRaw - liftedUnderlyingHue);
-  if(goalUnderlyingHueGap > 180) goalUnderlyingHueGap = 360 - goalUnderlyingHueGap;
-  const GOAL_HIGH_SAT_THRESHOLD = 0.45; // vivid enough that the goal IS the warm pigment, not a muted version of it
-  const GOAL_UNDERLYING_HUE_ALIGNMENT = 35; // same warm "family" as the lifted underlying pigment
-  const goalAlignedWithUnderlying = hueFromDegreesToToneKey(goalHueRaw, goalSatRaw) !== 'neutral'
-    && goalSatRaw >= GOAL_HIGH_SAT_THRESHOLD
-    && goalUnderlyingHueGap <= GOAL_UNDERLYING_HUE_ALIGNMENT;
-  const needsCounter = needsLiftUp && !counter.noCounterNeeded && !goalAlignedWithUnderlying;
+  // When the goal is vividly saturated (a real, deliberate hue — not a muted/neutral one), no
+  // corrective pigment is needed at all — per direct salon feedback, a vivid goal should be built
+  // by depositing an ACCENT tone close to its own hue, not by mixing in a corrective shade that
+  // only pulls the result AWAY from the goal. This applies whenever the goal is vivid enough,
+  // regardless of how closely its hue happens to align with the lifted underlying pigment's own
+  // hue — muted/low-saturation goals still benefit from a small corrective dose to clean up
+  // residual muddiness, so this skip is intentionally scoped to the high-saturation case only.
+  const GOAL_HIGH_SAT_THRESHOLD = 0.45; // vivid enough to warrant an accent tone instead of a corrective
+  const goalIsVividEnoughForAccent = hueFromDegreesToToneKey(goalHueRaw, goalSatRaw) !== 'neutral'
+    && goalSatRaw >= GOAL_HIGH_SAT_THRESHOLD;
+  const needsCounter = needsLiftUp && !counter.noCounterNeeded && !goalIsVividEnoughForAccent;
   let paletteHtml = `
     <div class="palette-item">
       <div class="palette-swatch" style="background:${currentData.hex}"></div>
@@ -2983,9 +3041,25 @@ function renderResults(){
     // recommended strength.
     const underSwatchHex = naturalLevelSwatch[liftRounded];
     const baseAppliedHexForPreview = liftSearch.baseAppliedHex || underSwatchHex;
-    const correctiveHexForPreview = liftSearch.correctiveHex || counter.swatch;
-    const moderateResult = liftSearch.mixed;
-    const strongResult = subtractiveMixHex(baseAppliedHexForPreview, correctiveHexForPreview, 1.0, liftSearch.w + 1.0);
+    // When the goal is vivid enough that no corrective is needed (!needsCounter, i.e. the goal's
+    // own saturation is high — see needsCounter's own threshold), this preview switches purpose:
+    // instead of showing a corrective pigment canceling residual warmth, it shows an ACCENT tone
+    // (closest real chart shade to the goal's own hue) being deposited to actually carry that
+    // vividness — per direct salon feedback that a level-matched blend alone reads too
+    // washed-out to pass as the goal's vivid hue, and that this should apply WHENEVER no
+    // corrective is needed for a high-saturation goal, not only when the goal's hue happens to
+    // closely align with the lifted underlying pigment's own hue.
+    const useAccentForPreview = !needsCounter && goalSatRaw >= GOAL_HIGH_SAT_THRESHOLD;
+    const accentEntryForPreview = useAccentForPreview ? findAccentColorForGoal(goalHueRaw, liftRounded) : null;
+    const correctiveHexForPreview = accentEntryForPreview
+      ? accentEntryForPreview.hex
+      : (liftSearch.correctiveHex || counter.swatch);
+    const moderateResult = accentEntryForPreview
+      ? subtractiveMixHex(baseAppliedHexForPreview, accentEntryForPreview.hex, 1.0, 0.35)
+      : liftSearch.mixed;
+    const strongResult = accentEntryForPreview
+      ? subtractiveMixHex(baseAppliedHexForPreview, accentEntryForPreview.hex, 1.0, 0.7)
+      : subtractiveMixHex(baseAppliedHexForPreview, correctiveHexForPreview, 1.0, liftSearch.w + 1.0);
 
     const correctiveLineForGoal = counter.noCounterNeeded
       ? `${counter.detailAsGoal || counter.name}`
@@ -3021,8 +3095,12 @@ function renderResults(){
       `;
     }
 
-    if(!counter.noCounterNeeded){
-      renderSubtractivePreview(baseAppliedHexForPreview, liftSearch.baseProduct, correctiveHexForPreview, counterDisplayName, moderateResult, strongResult, liftSearch.w, liftSearch.w + 1.0);
+    const showSubtractivePreview = !counter.noCounterNeeded || !!accentEntryForPreview;
+    if(showSubtractivePreview){
+      const previewLabel = accentEntryForPreview
+        ? `${accentEntryForPreview.name}(${accentEntryForPreview.brand})`
+        : counterDisplayName;
+      renderSubtractivePreview(baseAppliedHexForPreview, liftSearch.baseProduct, correctiveHexForPreview, previewLabel, moderateResult, strongResult, accentEntryForPreview ? 0.35 : liftSearch.w, accentEntryForPreview ? 0.7 : liftSearch.w + 1.0, !!accentEntryForPreview);
     } else {
       document.getElementById('subtractiveStrip').style.display = 'none';
     }
