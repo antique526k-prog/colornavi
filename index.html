@@ -1694,7 +1694,17 @@ function toneCorrectionSuffixOf(entry){
 // when deciding what to show in the recipe/preview UI, so both stay consistent with each other.
 const GOAL_HIGH_SAT_THRESHOLD = 0.45;
 
-const ACCENT_COLOR_BL_SUFFIXES = ['RV', 'P', 'O', 'C', 'R', 'Y'];
+// Full set of real chart tone suffixes usable as an ACCENT (a shade actually deposited to BUILD
+// a goal hue), covering every hue family on the chart — not just the originally-confirmed
+// warm-leaning set (RV/P/O/C/R/Y). MB/B/BV/V/YM/G are the SAME suffixes used by
+// TONE_CORRECTION_BL_SUFFIXES for the opposite purpose (canceling residual warmth); the same
+// physical products serve double duty depending on whether the goal needs something built up
+// (accent) or canceled (corrective) — what matters for accent selection is simply "closest real
+// chart shade to the goal's own hue", regardless of which list it was first catalogued under.
+// Without this full union, a cool/blue goal had no real blue/violet accent candidates available
+// and ended up matched against a warm-only shade (e.g. 10RV) purely because it was the closest
+// of a hue-incomplete list — a clearly wrong-reading result for a cool goal.
+const ACCENT_COLOR_BL_SUFFIXES = [...new Set(['RV', 'P', 'O', 'C', 'R', 'Y', ...TONE_CORRECTION_BL_SUFFIXES])];
 
 function isAccentColorEntry(entry){
   if(entry.brandKey !== 'bl') return false;
@@ -2188,7 +2198,13 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
       const accentEntry = correctiveProductOverride
         ? { name: correctiveProductOverride.name, brand: correctiveProductOverride.brand, hex: correctiveProductOverride.hex }
         : findAccentColorForGoal(targetHue, targetLevel);
-      if(accentEntry){
+      // Skip adding the accent when it would be the SAME product already chosen as the base
+      // (e.g. a straddle that already landed on "6B" being asked to add "6B" again at 25%) —
+      // per direct salon feedback this reads as a confusing, meaningless duplicate rather than a
+      // real two-ingredient mix. In that case the base alone already carries the goal's hue, so
+      // no separate accent dose is needed.
+      const accentIsSameAsBase = accentEntry && baseLabel.includes(`${accentEntry.name}(${accentEntry.brand})`);
+      if(accentEntry && !accentIsSameAsBase){
         const ACCENT_SHARE_PERCENT = 25; // a moderate minority dose — enough to carry real chroma
         // without overwhelming the level-matching straddle blend underneath it.
         const accentLabel = correctiveProductOverride ? `${accentEntry.name}(${accentEntry.brand})` : labelFor(accentEntry);
