@@ -1688,6 +1688,12 @@ function toneCorrectionSuffixOf(entry){
 // C=copper, R=red, Y=yellow), available at levels 6-10 only. Kept as a separate category from
 // TONE_CORRECTION_BL_SUFFIXES (which exists to CANCEL warmth, not to BUILD a vivid hue) since
 // mixing the two purposes into one list would make a single suffix do double, contradictory duty.
+// Saturation threshold above which a goal hue is vivid enough that depositing an ACCENT tone
+// (a real chart shade reading as that hue) is the right move, rather than a corrective tone
+// trying to cancel toward it — used both when planning the lift (searchLiftLevelAndWeight) and
+// when deciding what to show in the recipe/preview UI, so both stay consistent with each other.
+const GOAL_HIGH_SAT_THRESHOLD = 0.45;
+
 const ACCENT_COLOR_BL_SUFFIXES = ['RV', 'P', 'O', 'C', 'R', 'Y'];
 
 function isAccentColorEntry(entry){
@@ -2175,12 +2181,19 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
       // just relied upon to emerge from canceling/blending alone. Pick the closest-by-hue ACCENT
       // tone (RV/P/O/C/R/Y — see findAccentColorForGoal) and add it as a minority share, the same
       // way a corrective tone is added, but here to BUILD the hue rather than cancel anything.
-      const accentEntry = findAccentColorForGoal(targetHue, targetLevel);
+      //
+      // correctiveProductOverride, when supplied, is the SAME accent product searchLiftLevelAndWeight
+      // already settled on for this case — reuse it so the recipe agrees with 処方の方向性 instead
+      // of independently re-deriving a possibly-different closest match.
+      const accentEntry = correctiveProductOverride
+        ? { name: correctiveProductOverride.name, brand: correctiveProductOverride.brand, hex: correctiveProductOverride.hex }
+        : findAccentColorForGoal(targetHue, targetLevel);
       if(accentEntry){
         const ACCENT_SHARE_PERCENT = 25; // a moderate minority dose — enough to carry real chroma
         // without overwhelming the level-matching straddle blend underneath it.
+        const accentLabel = correctiveProductOverride ? `${accentEntry.name}(${accentEntry.brand})` : labelFor(accentEntry);
         finalHex = blendHex(baseHex, accentEntry.hex, 100 - ACCENT_SHARE_PERCENT, ACCENT_SHARE_PERCENT);
-        finalLabel = `${baseLabel} + ${labelFor(accentEntry)} ${ACCENT_SHARE_PERCENT}%`;
+        finalLabel = `${baseLabel} + ${accentLabel} ${ACCENT_SHARE_PERCENT}%`;
         accentUsed = true;
         correctivePercentUsed = ACCENT_SHARE_PERCENT;
       }
@@ -2492,13 +2505,44 @@ function searchLiftLevelAndWeight(goalHue, goalSat, goalLevel, currentLevel, goa
     } else {
       const correctiveHex = correctiveHexForGoal;
       const correctiveToneKey = hueFromDegreesToToneKey(goalHue, goalSat);
+      // Per direct salon feedback: a vivid (high-saturation) goal isn't reached by deposit-and-
+      // cancel logic — depositing an actual ACCENT tone (a real chart shade reading as the
+      // goal's own hue) gets closer than mixing in a corrective ever could, since a corrective
+      // pigment pulls AWAY from a vivid same-direction goal rather than toward it. Try both an
+      // accent-tone mix and a corrective-tone mix as candidates at this same level, and let
+      // whichever lands closer to the goal win — this keeps cooler/muted goals (where a
+      // corrective still legitimately helps) unaffected, while vivid warm goals naturally favor
+      // the accent path without needing a separate hard-coded branch for "vivid goal, skip lift".
+      const tryAccent = goalSat >= GOAL_HIGH_SAT_THRESHOLD;
+      const accentEntry = tryAccent ? findAccentColorForGoal(goalHue, lvl) : null;
+      // Same-depth (downtone/retone) case: when the goal's own level already sits close to the
+      // current level, no real lift is happening at all — per direct salon feedback, depth match
+      // should be strongly preferred over chasing a marginally closer hue/saturation a few
+      // levels deeper, since that deeper level isn't actually reachable without lifting first
+      // (which this case doesn't call for). The penalty only activates when current and goal are
+      // already close (within ~2 levels) — when a real lift gap exists, deeper candidates are
+      // legitimately being evaluated on their own merits and shouldn't be penalized for depth.
+      const isSameDepthCase = Math.abs(currentLevel - goalLevel) <= 2;
+      const SAME_DEPTH_LEVEL_PENALTY_PER_LEVEL = isSameDepthCase ? 0.3 : 0;
+      const levelDistancePenalty = SAME_DEPTH_LEVEL_PENALTY_PER_LEVEL * Math.abs(lvl - goalLevel);
       for(let w = 0.2; w <= CORRECTIVE_WEIGHT_MAX; w = Math.round((w + CORRECTIVE_WEIGHT_STEP) * 10) / 10){
         const mixed = subtractiveMixHex(underHex, correctiveHex, 1.0, w);
         const [mr,mg,mb] = hexToRgbArr(mixed);
         const mixedHsl = rgbToHsl(mr,mg,mb);
-        const dist = hslDistanceWeighted(mixedHsl, goalHue, goalSat, goalLightness);
+        const dist = hslDistanceWeighted(mixedHsl, goalHue, goalSat, goalLightness) + levelDistancePenalty;
         if(!best || dist < best.dist - SHALLOWER_LEVEL_TOLERANCE){
-          best = { lvl, w, dist, score: dist, mixed, mixedHsl, correctiveHex, correctiveToneKey, baseProduct: null, baseAppliedHex: underHex, effectiveLiftLevel: lvl, correctiveProductName: null, correctiveProductBrand: null };
+          best = { lvl, w, dist, score: dist, mixed, mixedHsl, correctiveHex, correctiveToneKey, baseProduct: null, baseAppliedHex: underHex, effectiveLiftLevel: lvl, correctiveProductName: null, correctiveProductBrand: null, isAccent: false };
+        }
+      }
+      if(accentEntry){
+        for(let w = 0.15; w <= 1.0; w = Math.round((w + 0.05) * 100) / 100){
+          const mixed = subtractiveMixHex(underHex, accentEntry.hex, 1.0, w);
+          const [mr,mg,mb] = hexToRgbArr(mixed);
+          const mixedHsl = rgbToHsl(mr,mg,mb);
+          const dist = hslDistanceWeighted(mixedHsl, goalHue, goalSat, goalLightness) + levelDistancePenalty;
+          if(!best || dist < best.dist - SHALLOWER_LEVEL_TOLERANCE){
+            best = { lvl, w, dist, score: dist, mixed, mixedHsl, correctiveHex: accentEntry.hex, correctiveToneKey, baseProduct: null, baseAppliedHex: underHex, effectiveLiftLevel: lvl, correctiveProductName: accentEntry.name, correctiveProductBrand: accentEntry.brand, isAccent: true };
+          }
         }
       }
     }
@@ -2928,7 +2972,20 @@ function renderResults(){
   // level (liftSearch.correctiveToneKey), not from the goal's own hue (which has none worth
   // chasing at low saturation).
   const counterToneKey = liftSearch.correctiveToneKey;
-  const liftCounter = counterToneMap[counterToneKey] || counterToneMap.orange;
+  // When searchLiftLevelAndWeight settled on the ACCENT path (liftSearch.isAccent), the pigment
+  // actually being deposited is the accent tone it found — NOT the counterToneMap entry for this
+  // toneKey, which is a CANCELING color (e.g. red -> グリーン系) and would contradict a vivid
+  // goal that's being built up rather than corrected toward. Build a counterToneMap-shaped
+  // stand-in around the real accent product so all the downstream display code (which expects
+  // .name/.swatch/.noCounterNeeded) can stay the same regardless of which path was taken.
+  const liftCounter = liftSearch.isAccent
+    ? {
+        name: `${liftSearch.correctiveProductName}(${liftSearch.correctiveProductBrand})`,
+        swatch: liftSearch.correctiveHex,
+        detailAsGoal: `この目的色に寄せるには、${liftSearch.correctiveProductName}(${liftSearch.correctiveProductBrand})の単品アクセントカラーを地毛アンダーに重ねます。希望の色味を実際に乗せて発色させる配合です。`,
+        noCounterNeeded: false,
+      }
+    : (counterToneMap[counterToneKey] || counterToneMap.orange);
   // underlyingLiftToneKey: purely descriptive — what color family the underlying pigment itself
   // reads as at this lift level (ブラウン/オレンジ/イエロー by level band), used only for the
   // "地毛から○○みが出てくる" sentences. Distinct from counterToneKey: the corrective pigment
@@ -2959,22 +3016,27 @@ function renderResults(){
   // When the goal is vividly saturated (a real, deliberate hue — not a muted/neutral one), no
   // corrective pigment is needed at all — per direct salon feedback, a vivid goal should be built
   // by depositing an ACCENT tone close to its own hue, not by mixing in a corrective shade that
-  // only pulls the result AWAY from the goal. This applies whenever the goal is vivid enough,
-  // regardless of how closely its hue happens to align with the lifted underlying pigment's own
-  // hue — muted/low-saturation goals still benefit from a small corrective dose to clean up
-  // residual muddiness, so this skip is intentionally scoped to the high-saturation case only.
-  const GOAL_HIGH_SAT_THRESHOLD = 0.45; // vivid enough to warrant an accent tone instead of a corrective
-  const goalIsVividEnoughForAccent = hueFromDegreesToToneKey(goalHueRaw, goalSatRaw) !== 'neutral'
-    && goalSatRaw >= GOAL_HIGH_SAT_THRESHOLD;
+  // only pulls the result AWAY from the goal. Trusting liftSearch.isAccent (set by
+  // searchLiftLevelAndWeight's own accent-vs-corrective comparison) rather than re-deriving
+  // "vivid enough" from saturation alone here keeps this display logic in agreement with
+  // whichever path the actual lift search determined fits best — including cases where the lift
+  // search itself decided a corrective still wins despite high saturation (e.g. hue alignment
+  // makes the corrective path numerically closer for some specific combination).
+  const goalIsVividEnoughForAccent = !!liftSearch.isAccent;
   const needsCounter = needsLiftUp && !counter.noCounterNeeded && !goalIsVividEnoughForAccent;
+  // Show a middle palette step whenever a single-pigment shade is actually being deposited —
+  // either a corrective tone (needsCounter) or an accent tone (goalIsVividEnoughForAccent), the
+  // latter using liftCounter's accent-shaped stand-in (see its construction above) so the same
+  // display code works for both without a separate branch.
+  const showCounterStep = needsCounter || (needsLiftUp && goalIsVividEnoughForAccent);
   let paletteHtml = `
     <div class="palette-item">
       <div class="palette-swatch" style="background:${currentData.hex}"></div>
       <div class="palette-item-label"><b>現状</b>${currentData.toneLabel}</div>
     </div>
   `;
-  if(needsCounter){
-    const counterStepLabel = needsLiftUp ? '使用する単品薬剤' : '補色';
+  if(showCounterStep){
+    const counterStepLabel = '使用する単品薬剤';
     const counterStepSwatch = (needsLiftUp && liftSearch.correctiveHex) ? liftSearch.correctiveHex : counter.swatch;
     paletteHtml += `<div class="palette-arrow">→</div>
     <div class="palette-item">
@@ -3035,31 +3097,22 @@ function renderResults(){
     // Subtractive mixing using the SAME (level, weight) pair and SAME base/corrective products
     // the joint search actually found as the best match to the goal — rather than re-deriving a
     // separate fixed-ratio mix here, which could disagree with what searchLiftLevelAndWeight
-    // already determined fits best. moderateResult is that actual best-fit result; strongResult
-    // shows a heavier application of the same corrective pigment for comparison, so the person
-    // can see how much further darkening/desaturation a stronger dose would cause versus the
-    // recommended strength.
+    // already determined fits best. moderateResult is that actual best-fit result (liftSearch.mixed
+    // already reflects whichever path — accent or corrective — the search itself chose); strongResult
+    // shows a heavier application of the same pigment for comparison, so the person can see how
+    // much further darkening/desaturation (corrective path) or saturation (accent path) a
+    // stronger dose would cause versus the recommended strength.
     const underSwatchHex = naturalLevelSwatch[liftRounded];
     const baseAppliedHexForPreview = liftSearch.baseAppliedHex || underSwatchHex;
-    // When the goal is vivid enough that no corrective is needed (!needsCounter, i.e. the goal's
-    // own saturation is high — see needsCounter's own threshold), this preview switches purpose:
-    // instead of showing a corrective pigment canceling residual warmth, it shows an ACCENT tone
-    // (closest real chart shade to the goal's own hue) being deposited to actually carry that
-    // vividness — per direct salon feedback that a level-matched blend alone reads too
-    // washed-out to pass as the goal's vivid hue, and that this should apply WHENEVER no
-    // corrective is needed for a high-saturation goal, not only when the goal's hue happens to
-    // closely align with the lifted underlying pigment's own hue.
-    const useAccentForPreview = !needsCounter && goalSatRaw >= GOAL_HIGH_SAT_THRESHOLD;
-    const accentEntryForPreview = useAccentForPreview ? findAccentColorForGoal(goalHueRaw, liftRounded) : null;
-    const correctiveHexForPreview = accentEntryForPreview
-      ? accentEntryForPreview.hex
-      : (liftSearch.correctiveHex || counter.swatch);
-    const moderateResult = accentEntryForPreview
-      ? subtractiveMixHex(baseAppliedHexForPreview, accentEntryForPreview.hex, 1.0, 0.35)
-      : liftSearch.mixed;
-    const strongResult = accentEntryForPreview
-      ? subtractiveMixHex(baseAppliedHexForPreview, accentEntryForPreview.hex, 1.0, 0.7)
+    const useAccentForPreview = !!liftSearch.isAccent;
+    const correctiveHexForPreview = liftSearch.correctiveHex || counter.swatch;
+    const moderateResult = liftSearch.mixed;
+    const strongResult = useAccentForPreview
+      ? subtractiveMixHex(baseAppliedHexForPreview, correctiveHexForPreview, 1.0, liftSearch.w + 0.3)
       : subtractiveMixHex(baseAppliedHexForPreview, correctiveHexForPreview, 1.0, liftSearch.w + 1.0);
+    const accentEntryForPreview = useAccentForPreview
+      ? { name: liftSearch.correctiveProductName, brand: liftSearch.correctiveProductBrand, hex: liftSearch.correctiveHex }
+      : null;
 
     const correctiveLineForGoal = counter.noCounterNeeded
       ? `${counter.detailAsGoal || counter.name}`
@@ -3100,7 +3153,7 @@ function renderResults(){
       const previewLabel = accentEntryForPreview
         ? `${accentEntryForPreview.name}(${accentEntryForPreview.brand})`
         : counterDisplayName;
-      renderSubtractivePreview(baseAppliedHexForPreview, liftSearch.baseProduct, correctiveHexForPreview, previewLabel, moderateResult, strongResult, accentEntryForPreview ? 0.35 : liftSearch.w, accentEntryForPreview ? 0.7 : liftSearch.w + 1.0, !!accentEntryForPreview);
+      renderSubtractivePreview(baseAppliedHexForPreview, liftSearch.baseProduct, correctiveHexForPreview, previewLabel, moderateResult, strongResult, liftSearch.w, useAccentForPreview ? liftSearch.w + 0.3 : liftSearch.w + 1.0, useAccentForPreview);
     } else {
       document.getElementById('subtractiveStrip').style.display = 'none';
     }
