@@ -1265,7 +1265,16 @@ function analyzeImage(img, region){
   const {h: hue, s: sat} = rgbToHsl(r,g,b);
   let toneLabel, toneKey, toneColor;
   if(sat < neutralSatThreshold){
-    toneLabel = 'ニュートラル(無彩色寄り)'; toneKey='neutral'; toneColor='#9a9a92';
+    // Per direct salon feedback: at very dark levels (1-4), "ニュートラル" reads as misleadingly
+    // implying a cool-leaning cast — when in fact low saturation here just means no visible
+    // undertone at all (neither warm nor cool), which is what "black" naturally communicates at
+    // the salon floor. toneKey stays 'neutral' (the underlying logic — corrective selection,
+    // lift planning, etc. — is unchanged); only the displayed label differs.
+    if(level < DARK_LEVEL_NEUTRAL_CUTOFF){
+      toneLabel = 'ブラック'; toneKey='neutral'; toneColor='#2b2b2b';
+    } else {
+      toneLabel = 'ニュートラル(無彩色寄り)'; toneKey='neutral'; toneColor='#9a9a92';
+    }
   } else if(hue >= 0 && hue < 25){
     toneLabel = 'レッド系'; toneKey='red'; toneColor='#c0392b';
   } else if(hue >= 25 && hue < 50){
@@ -1452,57 +1461,57 @@ function weightedDepthBlendForDye(levelHigh, levelLow, linearWeightHigh, linearW
 // Qualucia (クオルシア) color palette, extracted from the salon's own color chart photo.
 // Each entry's hex is sampled directly from the chart swatch, so it reflects the actual product color.
 const qualuciaPalette = [
-  { name: 'ハイライトナー', nameEn: 'High Lightner', level: 14, hex: '#dfdecb' },
-  { name: 'シルバーアッシュ', nameEn: 'Silver Ash', level: 14, hex: '#7c7194' },
-  { name: 'ラベンダー', nameEn: 'Lavender', level: 14, hex: '#765179' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 14, hex: '#a4918c' },
-  { name: 'グレー', nameEn: 'Gray', level: 13, hex: '#746e6e' },
-  { name: 'シルバー', nameEn: 'Silver', level: 13, hex: '#8c818f' },
-  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 13, hex: '#847265' },
-  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 13, hex: '#a7877f' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 13, hex: '#a08071' },
-  { name: 'グレー', nameEn: 'Gray', level: 11, hex: '#57514e' },
-  { name: 'シルバー', nameEn: 'Silver', level: 11, hex: '#716770' },
-  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 11, hex: '#635346' },
-  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 11, hex: '#90716a' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 11, hex: '#8f7166' },
-  { name: 'グレー', nameEn: 'Gray', level: 9, hex: '#46423f' },
-  { name: 'シルバー', nameEn: 'Silver', level: 9, hex: '#60575c' },
-  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 9, hex: '#463b32' },
-  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 9, hex: '#82625a' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 9, hex: '#735648' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 8, hex: '#523d34' },
-  { name: 'グレー', nameEn: 'Gray', level: 7, hex: '#47433f' },
-  { name: 'シルバー', nameEn: 'Silver', level: 7, hex: '#564d52' },
-  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 7, hex: '#342b27' },
-  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 7, hex: '#5c3f36' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 7, hex: '#37261f' },
-  { name: 'グレー', nameEn: 'Gray', level: 5, hex: '#363430' },
-  { name: 'シルバー', nameEn: 'Silver', level: 5, hex: '#352e2f' },
-  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 5, hex: '#28221e' },
-  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 5, hex: '#412c27' },
-  { name: 'ベージュ', nameEn: 'Beige', level: 5, hex: '#291d18' },
-  { name: 'グリーン', nameEn: 'Green', level: 6, hex: '#2f4a3b' },
-  { name: 'コーラルピンク', nameEn: 'Coral Pink', level: 10, hex: '#79474c' },
-  { name: 'イエロー', nameEn: 'Yellow', level: 11, hex: '#e3b45a' },
-  { name: 'アクアブルー', nameEn: 'Aqua Blue', level: 7, hex: '#446073' },
-  { name: 'コーラルピンク', nameEn: 'Coral Pink', level: 6, hex: '#5f3a3a' },
-  { name: 'オレンジ', nameEn: 'Orange', level: 10, hex: '#522c23' },
-  { name: 'ウルトラバイオレット', nameEn: 'Ultra Violet', level: 6, hex: '#443858' },
-  { name: 'カーディナルレッド', nameEn: 'Cardinal Red', level: 7, hex: '#592b2b' },
-  { name: 'ミルキーホワイト', nameEn: 'Milky White', level: 10, hex: '#ddd5ca' },
-  { name: 'ディープバイオレット', nameEn: 'Deep Violet', level: 5, hex: '#2c2130' },
-  { name: 'レッド', nameEn: 'Red', level: 7, hex: '#482731' },
-  { name: 'クリア', nameEn: 'Clear', level: 0, hex: '#dadbcd' },
-  { name: 'ネイビーブルー', nameEn: 'Navy Blue', level: 5, hex: '#1f2130' },
-  { name: 'ピンク', nameEn: 'Pink', level: 6, hex: '#50272b' },
-  { name: 'グレージュ', nameEn: 'Greige', level: 7, hex: '#3c4044' },
-  { name: 'ネイビーブルー', nameEn: 'Navy Blue', level: 3, hex: '#1a1c27' },
-  { name: 'ピンクパール', nameEn: 'Pink Pearl', level: 6, hex: '#5d3f47' },
-  { name: 'ブラウンブースター', nameEn: 'Brown Booster', level: 3, hex: '#221d18' },
-  { name: 'ディープパープル', nameEn: 'Deep Purple', level: 5, hex: '#1f1419' },
-  { name: 'ロイヤルパープル', nameEn: 'Royal Purple', level: 3, hex: '#302235' },
-  { name: 'ブラックブースター', nameEn: 'Black Booster', level: 1, hex: '#14120f' }
+  { name: 'ハイライトナー', nameEn: 'High Lightner', level: 14, hex: '#f6f7e9' },
+  { name: 'シルバーアッシュ', nameEn: 'Silver Ash', level: 14, hex: '#a798c1' },
+  { name: 'ラベンダー', nameEn: 'Lavender', level: 14, hex: '#a577a8' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 14, hex: '#cbb8b4' },
+  { name: 'グレー', nameEn: 'Gray', level: 13, hex: '#a19899' },
+  { name: 'シルバー', nameEn: 'Silver', level: 13, hex: '#b0a5b5' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 13, hex: '#a58f82' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 13, hex: '#caa89f' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 13, hex: '#ccaf9d' },
+  { name: 'グレー', nameEn: 'Gray', level: 11, hex: '#89827c' },
+  { name: 'シルバー', nameEn: 'Silver', level: 11, hex: '#a497a1' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 11, hex: '#8e7765' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 11, hex: '#b6948b' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 11, hex: '#b39482' },
+  { name: 'グレー', nameEn: 'Gray', level: 9, hex: '#736e6a' },
+  { name: 'シルバー', nameEn: 'Silver', level: 9, hex: '#887883' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 9, hex: '#604f3d' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 9, hex: '#b89086' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 9, hex: '#9b7865' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 8, hex: '#8d6d5e' },
+  { name: 'グレー', nameEn: 'Gray', level: 7, hex: '#736c64' },
+  { name: 'シルバー', nameEn: 'Silver', level: 7, hex: '#7b6e78' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 7, hex: '#544339' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 7, hex: '#8d695d' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 7, hex: '#543b34' },
+  { name: 'グレー', nameEn: 'Gray', level: 5, hex: '#5e5a51' },
+  { name: 'シルバー', nameEn: 'Silver', level: 5, hex: '#5f5151' },
+  { name: 'サンドベージュ', nameEn: 'Sand Beige', level: 5, hex: '#3f3430' },
+  { name: 'ピンクベージュ', nameEn: 'Pink Beige', level: 5, hex: '#563935' },
+  { name: 'ベージュ', nameEn: 'Beige', level: 5, hex: '#3b2a20' },
+  { name: 'グリーン', nameEn: 'Green', level: 6, hex: '#37674d' },
+  { name: 'コーラルピンク', nameEn: 'Coral Pink', level: 10, hex: '#a86f75' },
+  { name: 'イエロー', nameEn: 'Yellow', level: 11, hex: '#ffdc86' },
+  { name: 'アクアブルー', nameEn: 'Aqua Blue', level: 7, hex: '#4e7a95' },
+  { name: 'コーラルピンク', nameEn: 'Coral Pink', level: 6, hex: '#6f4642' },
+  { name: 'オレンジ', nameEn: 'Orange', level: 10, hex: '#6b3b2f' },
+  { name: 'ウルトラバイオレット', nameEn: 'Ultra Violet', level: 6, hex: '#5e4a7f' },
+  { name: 'カーディナルレッド', nameEn: 'Cardinal Red', level: 7, hex: '#733938' },
+  { name: 'ミルキーホワイト', nameEn: 'Milky White', level: 10, hex: '#f6efe7' },
+  { name: 'ディープバイオレット', nameEn: 'Deep Violet', level: 5, hex: '#432f4a' },
+  { name: 'レッド', nameEn: 'Red', level: 7, hex: '#5c2c3a' },
+  { name: 'クリア', nameEn: 'Clear', level: 0, hex: '#f1f1e7' },
+  { name: 'ネイビーブルー', nameEn: 'Navy Blue', level: 5, hex: '#292a46' },
+  { name: 'ピンク', nameEn: 'Pink', level: 6, hex: '#65363c' },
+  { name: 'グレージュ', nameEn: 'Greige', level: 7, hex: '#535b5e' },
+  { name: 'ネイビーブルー', nameEn: 'Navy Blue', level: 3, hex: '#1c2135' },
+  { name: 'ピンクパール', nameEn: 'Pink Pearl', level: 6, hex: '#875b68' },
+  { name: 'ブラウンブースター', nameEn: 'Brown Booster', level: 3, hex: '#261f15' },
+  { name: 'ディープパープル', nameEn: 'Deep Purple', level: 5, hex: '#351b28' },
+  { name: 'ロイヤルパープル', nameEn: 'Royal Purple', level: 3, hex: '#482d50' },
+  { name: 'ブラックブースター', nameEn: 'Black Booster', level: 1, hex: '#120e0b' }
 ];
 
 // Fiole BL Color (フィヨーレ BLカラー) palette, extracted from the salon's own color chart photo.
@@ -1622,7 +1631,7 @@ let lastEstimatedLift = null;
 // pigment ash/violet/green" product that exist on this chart) on top when the base alone isn't
 // enough to clear the remaining warmth. Both lists are name-prefix/suffix matches against the
 // real palette data already defined above, so they only ever reference shades that actually ship.
-const BASE_CATEGORY_QUALUCIA_NAMES = ['グレー', 'シルバー', 'シルバーアッシュ', 'ラベンダー', 'サンドベージュ', 'ピンクベージュ', 'ベージュ', 'グレージュ', 'ライトナー'];
+const BASE_CATEGORY_QUALUCIA_NAMES = ['グレー', 'シルバー', 'シルバーアッシュ', 'ラベンダー', 'サンドベージュ', 'ピンクベージュ', 'ベージュ', 'グレージュ', 'ライトナー', 'ハイライトナー'];
 const BASE_CATEGORY_BL_SUFFIXES = ['NN', 'MT', 'GN', 'GA', 'GP', 'GB', 'GNB', 'GY'];
 const BASE_CATEGORY_BL_EXACT_NAMES = ['ライトナー'];
 // Tone-correction shades: only the ones explicitly called out (MB/B/BV/V/YM/G) — these exist only
@@ -2078,7 +2087,7 @@ function recommendProductColors(paletteKey, targetHue, targetLevel, maxResults, 
 //   3. The realized swatch is the SUBTRACTIVE mix of the assembled tint over the actual
 //      underlying pigment at the relevant level — i.e. what it would actually look like
 //      deposited on that hair — not just an additive blend of the ingredients' own colors.
-function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, underlyingHex, underlyingToneKey, maxResults, forceCounter, correctiveWeight, correctiveProductOverride){
+function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, underlyingHex, underlyingToneKey, maxResults, forceCounter, correctiveWeight, correctiveProductOverride, forceAccent){
   maxResults = maxResults || 3;
 
   let palette;
@@ -2153,14 +2162,35 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
     // says — rather than re-deriving need from hue distance alone, which could disagree on a
     // near-neutral goal (where hue itself is a noisy, low-confidence signal at low saturation).
     const counter = counterToneMap[underlyingToneKey] || counterToneMap.orange;
+    // Whether the chosen BASE blend (baseHex — which may already include a vivid, real
+    // hue-matched product like "8P" picked by the straddle search) already sits close to the
+    // goal's own hue. When it does, adding a corrective on top would contradict what the base
+    // already accomplished — e.g. pairing a red-toned "8P" base with a "グリーン系" corrective
+    // makes no sense, since the corrective's whole purpose is to cancel the very hue the base
+    // was chosen to carry. This check runs regardless of which branch determined needsCounter
+    // (forceCounter from the caller, or the hue-distance fallback below), since the
+    // contradiction is about the ACTUAL base color selected, not about why a corrective was
+    // requested in the first place.
+    const {h: baseHue, s: baseSat, l: baseLightness} = rgbToHsl(...hexToRgbArr(baseHex));
+    let baseGoalGap = Math.abs(baseHue - targetHue);
+    if(baseGoalGap > 180) baseGoalGap = 360 - baseGoalGap;
+    // HSL saturation is mathematically unstable near both ends of the lightness range — just as
+    // a near-black color can read a spuriously high saturation from tiny RGB noise (see
+    // analyzeImage's own DARK_LEVEL_NEUTRAL_CUTOFF guard), a near-white product like
+    // "ハイライトナー" (a near-colorless lightener, L≈0.95) can do the same: its saturation
+    // computed as 0.47 here, despite reading as essentially white/colorless by eye, which falsely
+    // satisfied this check and caused a needed corrective to be skipped entirely. Require BOTH a
+    // real saturation AND a lightness within a band where that saturation reading is trustworthy.
+    const baseSatIsTrustworthy = baseLightness > 0.12 && baseLightness < 0.88;
+    const baseAlreadyCarriesGoalHue = baseSatIsTrustworthy && baseSat > 0.25 && baseGoalGap < 40;
     let needsCounter;
     if(typeof forceCounter === 'boolean'){
-      needsCounter = forceCounter && !counter.noCounterNeeded;
+      needsCounter = forceCounter && !counter.noCounterNeeded && !baseAlreadyCarriesGoalHue;
     } else {
       const {h: underHue} = rgbToHsl(...hexToRgbArr(underlyingHex));
       let underGoalGap = Math.abs(underHue - targetHue);
       if(underGoalGap > 180) underGoalGap = 360 - underGoalGap;
-      needsCounter = !counter.noCounterNeeded && underGoalGap > 40;
+      needsCounter = !counter.noCounterNeeded && underGoalGap > 40 && !baseAlreadyCarriesGoalHue;
     }
 
     let finalHex = baseHex, finalLabel = baseLabel, counterUsed = false, correctivePercentUsed = 0, accentUsed = false;
@@ -2183,7 +2213,7 @@ function buildRecipeCandidates(paletteKey, targetHue, targetSat, targetLevel, un
       finalLabel = `${baseLabel} + ${correctiveLabel} ${correctiveSharePercent}%`;
       counterUsed = true;
       correctivePercentUsed = correctiveSharePercent;
-    } else if(targetSat >= 0.45){
+    } else if(typeof forceAccent === 'boolean' ? forceAccent : targetSat >= 0.45){
       // No corrective needed (the goal's own vivid hue already aligns with the lifted underlying
       // pigment — see renderResults' goalIsVividEnoughForAccent), but per direct salon feedback the
       // straddle-blended base alone still reads too washed-out/pale to actually look like the
@@ -2445,7 +2475,13 @@ function searchLiftLevelAndWeight(goalHue, goalSat, goalLevel, currentLevel, goa
   const isNeutralGoal = hueFromDegreesToToneKey(goalHue, goalSat) === 'neutral';
   const correctiveHexForGoal = isNeutralGoal ? null : correctiveSwatchForGoal(goalHue, goalSat);
   const floor = Math.max(currentLevel, Math.round(goalLevel));
-  const ceiling = (typeof ceilingLevel === 'number') ? ceilingLevel : 18;
+  // Default ceiling was previously 18, but naturalLevelSwatch/findBaseProductForLevel/etc. all
+  // support levels up to 20 — a goalLevel of 19 or 20 made floor exceed this stale default,
+  // collapsing the search loop to zero iterations and returning null (which then crashed every
+  // downstream caller expecting a result object back). Default now matches the actual supported
+  // range, and floor is also clamped to never exceed ceiling, so a caller-supplied ceilingLevel
+  // lower than floor can't reproduce the same zero-iteration collapse either.
+  const ceiling = Math.max(floor, (typeof ceilingLevel === 'number') ? ceilingLevel : 20);
 
   let best = null;
   let fallbackBest = null;
@@ -2497,7 +2533,16 @@ function searchLiftLevelAndWeight(goalHue, goalSat, goalLevel, currentLevel, goa
       // level purely by how clean the resulting color is — no separate weight search loop, and
       // no level-distance penalty term needed since the constraint enforces it structurally.
       let w = solveCorrectiveWeightForTargetLift(lvl, correctiveProductLevel, goalLevel);
-      if(w === null) continue; // this lvl can't reach the goal level even with zero correction
+      // When no real w reaches the goal level exactly (e.g. currentLevel already sits above
+      // goalLevel, so floor=currentLevel can never be diluted down to a lower goalLevel no
+      // matter how much corrective is used), fall back to w=0 — i.e. just this level's own
+      // color with no correction — rather than skipping the candidate entirely. Without this,
+      // every level in an unreachable-goal scenario got skipped and the search returned null,
+      // which crashed every caller expecting a result object back (e.g. a downtone case where
+      // currentLevel > goalLevel still triggers this neutral-goal search unconditionally before
+      // the caller's own levelGap branching decides whether to use the result).
+      const wUnreachable = (w === null);
+      if(wUnreachable) w = 0;
 
       const mixed = subtractiveMixHex(baseAppliedHex, correctiveHex, 1.0, w);
       const [mr,mg,mb] = hexToRgbArr(mixed);
@@ -2511,7 +2556,7 @@ function searchLiftLevelAndWeight(goalHue, goalSat, goalLevel, currentLevel, goa
       // every single level in range happens to need a thinner-than-minimum application (e.g. the
       // goal sits right at the lift ceiling, leaving no room for a higher level to push toward).
       // Without this fallback, that edge case returned nothing at all rather than a usable answer.
-      if(w >= MIN_NEUTRAL_CORRECTIVE_WEIGHT){
+      if(w >= MIN_NEUTRAL_CORRECTIVE_WEIGHT && !wUnreachable){
         if(!best || dist < best.dist - SHALLOWER_LEVEL_TOLERANCE){
           best = candidate;
         }
@@ -2865,7 +2910,7 @@ function subtractiveMixHex(hexA, hexB, weightA, weightB){
 // product's own color and the realistic on-hair result shown side by side. Replaces three
 // previously-separate strips (単品おすすめ / 補色バリエーション / 染料補正ミックス) with the
 // single combined answer a colorist actually wants: what to mix, and what it'll look like.
-function renderProductStrip(currentData, goalData, needsDeepLift, overBleach, estimatedLiftForProducts, underlyingHex, underlyingToneKey, forceCounter, correctiveWeight, correctiveProductOverride){
+function renderProductStrip(currentData, goalData, needsDeepLift, overBleach, estimatedLiftForProducts, underlyingHex, underlyingToneKey, forceCounter, correctiveWeight, correctiveProductOverride, forceAccent){
   const dyeStrip = document.getElementById('dyeCorrectionStrip');
   const dyeRow = document.getElementById('dyeCorrectionRow');
   const lineLabelEl = document.getElementById('productLineLabel');
@@ -2880,7 +2925,7 @@ function renderProductStrip(currentData, goalData, needsDeepLift, overBleach, es
 
   const recipes = buildRecipeCandidates(
     activeColorLine, goalHue, goalSatForProducts, recipeTargetLevel,
-    effectiveUnderlyingHex, effectiveUnderlyingToneKey, 4, forceCounter, correctiveWeight, correctiveProductOverride
+    effectiveUnderlyingHex, effectiveUnderlyingToneKey, 4, forceCounter, correctiveWeight, correctiveProductOverride, forceAccent
   );
 
   if(lineLabelEl){
@@ -3044,7 +3089,11 @@ function renderResults(){
   // either a corrective tone (needsCounter) or an accent tone (goalIsVividEnoughForAccent), the
   // latter using liftCounter's accent-shaped stand-in (see its construction above) so the same
   // display code works for both without a separate branch.
-  const showCounterStep = needsCounter || (needsLiftUp && goalIsVividEnoughForAccent);
+  // Per direct salon feedback, this middle palette step ("使用する単品薬剤") reads as confusing
+  // or misleading and is hidden for now — the corrective/accent pigment detail still lives in
+  // the 現実的な仕上がり予測 section and 配合案 cards below, so this isn't a loss of information,
+  // just one fewer (and potentially confusing) place it's repeated.
+  const showCounterStep = false;
   let paletteHtml = `
     <div class="palette-item">
       <div class="palette-swatch" style="background:${currentData.hex}"></div>
@@ -3080,7 +3129,7 @@ function renderResults(){
   const correctiveProductOverride = (needsLiftUp && liftSearch.correctiveProductName)
     ? { hex: liftSearch.correctiveHex, name: liftSearch.correctiveProductName, brand: liftSearch.correctiveProductBrand }
     : null;
-  renderProductStrip(currentData, goalData, needsDeepLift, overBleachForProducts, estimatedLift, underlyingHexForProducts, underlyingToneKeyForProducts, needsCounter, liftSearch.w, correctiveProductOverride);
+  renderProductStrip(currentData, goalData, needsDeepLift, overBleachForProducts, estimatedLift, underlyingHexForProducts, underlyingToneKeyForProducts, needsCounter, liftSearch.w, correctiveProductOverride, goalIsVividEnoughForAccent);
 
   if(needsDeepLift){
     // Cool/saturated goal that needs lifting well past its own visual level — the core insight
@@ -3130,19 +3179,19 @@ function renderResults(){
       ? { name: liftSearch.correctiveProductName, brand: liftSearch.correctiveProductBrand, hex: liftSearch.correctiveHex }
       : null;
 
-    const correctiveLineForGoal = counter.noCounterNeeded
-      ? `${counter.detailAsGoal || counter.name}`
-      : `希望色「${goalData.toneLabel}」を作るには<strong>${counterDisplayName}</strong>の単品薬剤を使います。<strong>実際には地毛の暖色を完全に中和するのではなく、少し残した状態で発色させる設計で、補色を強めるほど明度も下がります</strong>(下の「現実的な仕上がり予測」を参照)。`;
-    const correctiveLineForGoalOneStep = counter.noCounterNeeded
-      ? `${counter.detailAsGoal || counter.name}`
-      : `希望色「${goalData.toneLabel}」を作るには<strong>${counterDisplayName}</strong>の単品薬剤を配合します。<strong>実際には地毛の暖色を完全に中和するのではなく、少し残した状態で発色させる設計で、補色を強めるほど明度も下がります</strong>(下の「現実的な仕上がり予測」を参照)。`;
-    const correctiveStepForGoal = counter.noCounterNeeded ? counter.detailAsGoal || counter.name : counter.detailAsGoal;
+    // Per direct salon feedback, the "希望色を作るには○○系の単品薬剤を配合します" sentence (and
+    // the corresponding "使用する単品薬剤" palette step below) read as confusing/misleading —
+    // the corrective/accent pigment detail already lives in the 現実的な仕上がり予測 section, so
+    // repeating it here in prose, or as its own palette step, added confusion rather than
+    // clarity. correctiveStepForGoal stays as an empty string (rather than removing it outright)
+    // so the step-list sentence it's embedded in still reads naturally on its own.
+    const correctiveStepForGoal = '';
 
     if(overBleachThreshold){
       // Genuine two-step process: bleach first, color second. Sequential "first/then" wording
       // is accurate here since these really are separate applications.
       verdictTitle.textContent = `リフト${liftRounded}相当 → 沈め込みで仕上げ(ブリーチ要)`;
-      verdictBody.innerHTML = `見た目の希望レベルは${goalData.level}ですが、この色味をきれいに出すには、地毛のアンダーを薄くするために<strong>レベル${liftRounded}相当までブリーチ</strong>してから、別工程で希望色のティントを希望レベルまで沈め込む2浴の設計が必要です。${liftMethodNote}レベル${liftRounded}付近では地毛から<span class="tone-tag" style="background:${underSwatchHex}">${liftToneKeyLabel(underlyingLiftToneKey)}み</span>が出てきますが、${correctiveLineForGoal}${saturationNote}`;
+      verdictBody.innerHTML = `見た目の希望レベルは${goalData.level}ですが、この色味をきれいに出すには、地毛のアンダーを薄くするために<strong>レベル${liftRounded}相当までブリーチ</strong>してから、別工程で希望色のティントを希望レベルまで沈め込む2浴の設計が必要です。${liftMethodNote}レベル${liftRounded}付近では地毛から<span class="tone-tag" style="background:${underSwatchHex}">${liftToneKeyLabel(underlyingLiftToneKey)}み</span>が出てきます。${saturationNote}`;
       stepList.innerHTML = `
         <li><span class="step-num">01</span><span>カウンセリングで履歴・ダメージレベルを確認し、レベル${liftRounded}付近までのブリーチの可否を見立てる</span></li>
         <li><span class="step-num">02</span><span>ブリーチでレベル${liftRounded}相当までリフトする(${liftToneKeyLabel(underlyingLiftToneKey)}みが出てくる想定)</span></li>
@@ -3155,7 +3204,7 @@ function renderResults(){
       // on its way to depositing at the goal's final depth — described as concurrent phases of
       // one application, not as sequential steps the colorist performs one after another.
       verdictTitle.textContent = `ワンメイクで設計(リフト${liftRounded}相当を通過 → 沈め込み)`;
-      verdictBody.innerHTML = `見た目の希望レベルは${goalData.level}ですが、この色味をきれいに出すには、配合するカラー剤が地毛のアンダーを<strong>レベル${liftRounded}相当まで薄くしながら、同時に希望色のティントを希望レベルまで沈め込む</strong>、ワンメイクでの設計になります。${liftMethodNote}リフトが進む過程でレベル${liftRounded}付近の<span class="tone-tag" style="background:${underSwatchHex}">${liftToneKeyLabel(underlyingLiftToneKey)}み</span>が一時的に出ますが、${correctiveLineForGoalOneStep}${saturationNote}`;
+      verdictBody.innerHTML = `見た目の希望レベルは${goalData.level}ですが、この色味をきれいに出すには、配合するカラー剤が地毛のアンダーを<strong>レベル${liftRounded}相当まで薄くしながら、同時に希望色のティントを希望レベルまで沈め込む</strong>、ワンメイクでの設計になります。${liftMethodNote}リフトが進む過程でレベル${liftRounded}付近の<span class="tone-tag" style="background:${underSwatchHex}">${liftToneKeyLabel(underlyingLiftToneKey)}み</span>が一時的に出ます。${saturationNote}`;
       stepList.innerHTML = `
         <li><span class="step-num">01</span><span>カウンセリングで履歴・ダメージレベルを確認し、ワンメイクでレベル${liftRounded}付近まで届くか見立てる</span></li>
         <li><span class="step-num">02</span><span>地毛から出る${liftToneKeyLabel(underlyingLiftToneKey)}みの上に、希望色「${goalData.toneLabel}」のティントを同じ剤に配合する</span></li>
@@ -3164,7 +3213,14 @@ function renderResults(){
       `;
     }
 
-    const showSubtractivePreview = !counter.noCounterNeeded || !!accentEntryForPreview;
+    // Per direct salon feedback, this section is hidden entirely for now — even after the accent
+    // path was introduced, cases where the underlying lifted pigment's own color already sits
+    // close to the goal hue can still numerically favor a thin corrective dose over an accent
+    // tone (the corrective math doesn't know it's contradicting a vivid goal it's supposed to be
+    // building toward, not canceling), and that mismatch was still surfacing here as a
+    // contradictory "グリーン系" pairing for a vivid red/warm goal. Hiding the whole section
+    // avoids exposing that contradiction until the underlying selection logic itself is revisited.
+    const showSubtractivePreview = false;
     if(showSubtractivePreview){
       const previewLabel = accentEntryForPreview
         ? `${accentEntryForPreview.name}(${accentEntryForPreview.brand})`
