@@ -1446,14 +1446,24 @@ function solveCorrectiveWeightForTargetLift(levelHigh, levelLow, targetLift){
 // still has meaningful room above the floor — its pigment concentration "wins" the blend more
 // than a naive ratio-based average, mirroring weightedLevelBlendForLift's logic but mirrored
 // toward the floor instead of the ceiling. Used when blending how much actual dye color/depth
-// shows through, as opposed to the resulting lightness/level number itself. Uses the same
-// push-ratio constants as the lift side for consistency (the underlying "headroom" reasoning is
-// symmetric between the two), since no separate calibration case was reported for the dye side.
+// shows through, as opposed to the resulting lightness/level number itself.
+//
+// Calibrated against a SEPARATE, stronger case than the lift side: a 1:1 mix of a level-12 and a
+// level-2 product lifts the underlying pigment to roughly level 9-10 (consistent with the lift
+// side's own asymmetry — the higher level's lifting power dominates), BUT the resulting dye
+// depth/color reads as level 4-5, much darker than the lift number alone would suggest — per
+// direct salon feedback, "リフトはしてるけれども結果的に低トーンの仕上がり" (it lifts, but the
+// finished color still reads low-tone because the low-tone product's pigment concentration wins
+// the COLOR even though the high-tone product won the LIFT). This needs a much stronger pull
+// toward the low side than the lift side's own boost (0.7) provides, so the dye/depth side uses
+// its own, separately-tuned boost constant rather than sharing PUSH_RATIO_BOOST with the lift side.
+const DEPTH_PUSH_RATIO_BOOST = 3.0;
+
 function weightedDepthBlendForDye(levelHigh, levelLow, linearWeightHigh, linearWeightLow){
   const headroomHigh = Math.max(0.3, PERCEPTUAL_CEILING_LEVEL - levelHigh);
   const headroomLow = Math.max(0.3, levelLow - PERCEPTUAL_FLOOR_LEVEL);
   const pushRatio = Math.pow(headroomLow / (headroomHigh + headroomLow), PUSH_RATIO_EXPONENT);
-  const biasedWeightLow = linearWeightLow + (linearWeightHigh + linearWeightLow) * pushRatio * PUSH_RATIO_BOOST;
+  const biasedWeightLow = linearWeightLow + (linearWeightHigh + linearWeightLow) * pushRatio * DEPTH_PUSH_RATIO_BOOST;
   const total = linearWeightHigh + biasedWeightLow;
   return { weightHigh: linearWeightHigh / total, weightLow: biasedWeightLow / total };
 }
@@ -3252,11 +3262,10 @@ function renderResults(){
       `;
     } else {
       verdictTitle.textContent = 'ワンメイクでリフトアップ + 色味調整';
-      verdictBody.innerHTML = `現状レベル${currentData.level}から希望レベル${goalData.level}への明度アップが必要ですが、必要なアンダーレベルは${liftRoundedSimple}相当で、カラー剤(ハイリフトタイプ)のリフト限度内(目安レベル14まで)に収まります。<strong>事前のハイライトやブリーチは不要</strong>で、<strong>ワンメイク(1剤でのリフト+ティント同時進行)</strong>で組める設計です。地毛の<span class="tone-tag" style="background:${currentData.toneColor}">${currentData.toneLabel.replace('系','')}み</span>の上に、希望色「${goalData.toneLabel}」を作るための<strong>${counterDisplayName}</strong>の単品薬剤を配合します。`;
+      verdictBody.innerHTML = `現状レベル${currentData.level}から希望レベル${goalData.level}への明度アップが必要ですが、必要なアンダーレベルは${liftRoundedSimple}相当で、カラー剤(ハイリフトタイプ)のリフト限度内(目安レベル14まで)に収まります。<strong>事前のハイライトやブリーチは不要</strong>で、<strong>ワンメイク(1剤でのリフト+ティント同時進行)</strong>で組める設計です。`;
       stepList.innerHTML = `
         <li><span class="step-num">01</span><span>カウンセリングで履歴・ダメージレベルを確認し、ワンメイクでレベル${liftRoundedSimple}付近まで届くか見立てる</span></li>
-        <li><span class="step-num">02</span><span>${counter.detailAsGoal}</span></li>
-        <li><span class="step-num">03</span><span>1回の施術でレベル${liftRoundedSimple}相当まで薄め通しつつ、希望色「${goalData.toneLabel}」をレベル${goalData.level}の仕上がりに沈め込む</span></li>
+        <li><span class="step-num">02</span><span>1回の施術でレベル${liftRoundedSimple}相当まで薄め通しつつ、希望色「${goalData.toneLabel}」をレベル${goalData.level}の仕上がりに沈め込む</span></li>
       `;
     }
   } else if(levelGap <= -1){
